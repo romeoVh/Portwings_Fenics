@@ -1,7 +1,6 @@
 from fenics import *
 from time import time
 from tqdm import tqdm
-from math_expressions import *
 from solvers.solver_base import *
 from pH_systems.weak_pH_system_NS import *
 

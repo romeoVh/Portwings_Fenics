@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added 2D wave problem and modified solver to handle nD">
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="No change">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_dfpH_wave.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_wave.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +48,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main_dfpH_wave">
+  <component name="RunManager" selected="Python.main_dfpH_NS">
     <configuration name="Asg_NS_eqns" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NS_pH_simulation" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -177,8 +177,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.main_dfpH_wave" />
         <item itemvalue="Python.main_dfpH_NS" />
+        <item itemvalue="Python.main_dfpH_wave" />
         <item itemvalue="Python.main_backup" />
         <item itemvalue="Python.dfpH_wave_solver" />
         <item itemvalue="Python.Asg_NS_eqns" />
@@ -208,7 +208,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645527519648</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="No change">
+      <created>1645527970634</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1645527970634</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -225,7 +232,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Added folders structure" />
     <MESSAGE value="Added 2D wave problem and modified solver to handle nD" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added 2D wave problem and modified solver to handle nD" />
+    <MESSAGE value="No change" />
+    <option name="LAST_COMMIT_MESSAGE" value="No change" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
