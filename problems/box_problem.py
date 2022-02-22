@@ -1,5 +1,5 @@
 
-from problem_base import *
+from problems.problem_base import *
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sym

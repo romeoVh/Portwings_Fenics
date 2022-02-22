@@ -2,8 +2,8 @@ from fenics import *
 from time import time
 from tqdm import tqdm
 from math_expressions import *
-from solver_base import *
-from weak_pH_system import *
+from solvers.solver_base import *
+from pH_systems.weak_pH_system import *
 
 class DualFieldPHWaveSolver(SolverBase):
     # "Dual Field port-Hamiltonian scheme for 3D Wave equation."

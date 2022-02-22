@@ -1,14 +1,9 @@
 
-from problem_base import *
+from problems.problem_base import *
 import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
 import sympy as sym
-
-class CubeFace(SubDomain):
-    def inside(self, x, on_boundary):
-        return on_boundary and near(x[0],1.0)
-
 # Problem definition
 class BeltramiProblem(ProblemBase):
     "3D Beltrami test problem with known analytical solution."

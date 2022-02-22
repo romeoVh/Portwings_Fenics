@@ -1,7 +1,7 @@
 from fenics import *
 from time import time
 from tqdm import tqdm
-from solver_base import *
+from solvers.solver_base import *
 
 class IPCS_Solver(SolverBase):
     "Incremental pressure-correction scheme."
@@ -99,8 +99,10 @@ class IPCS_Solver(SolverBase):
 
         # # Set strong boundary conditions
         u_ex_t_1, w_ex_t_1,p_ex_t_1 = problem.get_exact_sol_at_t(t_1_c)
-        bcu = [DirichletBC(V, u_ex_t_1, boundary_u_in)]
-        bcp = [DirichletBC(Q, p_ex_t_1, boundary_p_in)]
+        #bcu = [DirichletBC(V, u_ex_t_1, boundary_u_in)]
+        #bcp = [DirichletBC(Q, p_ex_t_1, boundary_p_in)]
+        bcu = [DirichletBC(V, u_ex_t_1, "on_boundary")]
+        bcp = []
 
         # Define Storage Arrays
         outputs_arr = np.zeros((1 + n_t, 5))
