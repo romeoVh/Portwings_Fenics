@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="removed starting prints">
-      <change afterPath="$PROJECT_DIR$/problems/channel_problem.py" afterDir="false" />
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Updated pH_NS solver with new beltrami_problem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_dfpH_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_NS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pH_systems/weak_pH_system_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/pH_systems/weak_pH_system_NS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/beltrami3d_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/beltrami3d_problem.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solvers/ipcs_solver_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/ipcs_solver_new.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -235,7 +232,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645533900846</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Upgraded strong boundary conditions imposition and outputs calculation">
+      <created>1645562577217</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1645562577217</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -255,7 +259,9 @@
     <MESSAGE value="No change" />
     <MESSAGE value="removed math expressions module" />
     <MESSAGE value="removed starting prints" />
-    <option name="LAST_COMMIT_MESSAGE" value="removed starting prints" />
+    <MESSAGE value="Upgraded strong boundary conditions imposition and outputs calculation" />
+    <MESSAGE value="Updated pH_NS solver with new beltrami_problem" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated pH_NS solver with new beltrami_problem" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

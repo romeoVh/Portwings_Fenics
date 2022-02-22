@@ -136,21 +136,22 @@ class DualFieldPHNSSolver(SolverBase):
         # Set strong boundary conditions
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
         [pH_primal.set_boundary_condition(bc) for bc in bcv]
-
-        # pH_primal.set_boundary_condition_old(problem, 0, DomainBoundary())
+        # TODO_Later: support multiple inputs for primal system
 
         # Define Storage Arrays
-        outputs_arr_primal = np.zeros((1 + n_t, 6))
-        outputs_arr_dual = np.zeros((1 + n_t, 6))
+        self.outputs_arr_primal = np.zeros((1 + n_t, 6))
+        self.outputs_arr_dual = np.zeros((1 + n_t, 6))
 
         # Initial Functionals
-        outputs_arr_primal[0] = pH_primal.outputs()  # ||v_ex_t - v_t||,||w_ex_t - w_t||,||p_ex_t - p_t||,||div(v_t)||, H_t, H_ex_t
-        outputs_arr_dual[0] = pH_dual.outputs()  # ||v_ex_t - vT_t||,||w_ex_t - wT_t||,||p_ex_t - pT_t||,||div(vT_t)||, HT_t, H_ex_t
+        self.outputs_arr_primal[0] = pH_primal.outputs()
+        # ||v_ex_t - v_t||,||w_ex_t - w_t||,||p_ex_t - p_t||,H_ex_t,H_t,||div(u_t)||
+        self.outputs_arr_dual[0] = pH_dual.outputs()
+        # ||v_ex_t - vT_t||,||w_ex_t - wT_t||,||p_ex_t - pT_t||,H_ex_t, HT_t, ||div(vT_t)||
 
-        print("Initial outputs for primal system: ", outputs_arr_primal[0])
-        print("Initial outputs for dual system: ", outputs_arr_dual[0])
+        print("Initial outputs for primal system: ", self.outputs_arr_primal[0])
+        print("Initial outputs for dual system: ", self.outputs_arr_dual[0])
 
-        # INput for advancing primal system only
+        # Input for advancing primal system only
         v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(pH_primal.t_mid)
         input_1 = interpolate(w_ex_tmid,VT_1)
         input_2 = interpolate(v_ex_tmid, VT_2)
@@ -169,8 +170,8 @@ class DualFieldPHNSSolver(SolverBase):
         # Advance dual system from t_0 --> t_1
 
         # Advance primal system from t_0 --> t_1
-        outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
-        print("Second output for primal system: ", outputs_arr_primal[self._ts])
+        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
+        print("Second output for primal system: ", self.outputs_arr_primal[self._ts])
 
         self.update(problem, dt)
 
@@ -179,22 +180,8 @@ class DualFieldPHNSSolver(SolverBase):
             # Advance 32 system from t_ii --> t_ii+1
             input_1 = interpolate(w_ex_tmid, VT_1)
             input_2 = interpolate(v_ex_tmid, VT_2)
-            outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
+            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
             self.update(problem, dt)
-
-        plt.subplot(2, 2, 1)
-        plt.bar(t_range, outputs_arr_primal[:, 0], width=float(dt) / 2)
-        plt.title("L2 error of v_t")
-        plt.subplot(2, 2, 2)
-        plt.bar(t_range, outputs_arr_primal[:, 2], width=float(dt) / 2)
-        plt.title("L2 error of p_t")
-        plt.subplot(2, 2, 3)
-        plt.plot(t_range, outputs_arr_primal[:, 4:6])
-        plt.legend(['H_t', 'H_ex_t'])
-        plt.subplot(2, 2, 4)
-        plt.plot(t_range, outputs_arr_primal[:, 3])
-        plt.title("divergence error of vector field")
-        plt.show()
 
 
 def m_1_form(chi_1,v_1):

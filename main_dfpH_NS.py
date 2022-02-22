@@ -36,6 +36,23 @@ def post_processing_ipcs_channel(ipcs, channel):
     plt.title("divergence error of vector field")
     plt.show()
 
+def post_processing_pH_NS_beltrami(pH_NS, beltrami):
+    plt.subplot(2, 3, 1)
+    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 0], width=float(beltrami.dt) / 2)
+    plt.title("L2 error of v_t")
+    plt.subplot(2, 3, 2)
+    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 1], width=float(beltrami.dt) / 2)
+    plt.title("L2 error of w_t")
+    plt.subplot(2, 3, 3)
+    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 2], width=float(beltrami.dt) / 2)
+    plt.title("L2 error of p_t")
+    plt.subplot(2, 3, 4)
+    plt.plot(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 3:5])
+    plt.legend(['H_ex_t', 'H_t'])
+    plt.subplot(2, 3, 5)
+    plt.plot(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 5])
+    plt.title("divergence error of vector field")
+    plt.show()
 
 if __name__ == '__main__':
     # 1. Select Problem:
@@ -50,21 +67,22 @@ if __name__ == '__main__':
 
     # 2. Select Solver:
 
-    options = {"pol_deg":2}
-    ipcs = IPCS_Solver(options)
+    # options = {"pol_deg":2}
+    # ipcs = IPCS_Solver(options)
 
-    ipcs.solve(beltrami)
-    post_processing_ipcs_beltrami(ipcs,beltrami)
+    # ipcs.solve(beltrami)
+    # post_processing_ipcs_beltrami(ipcs,beltrami)
 
     #ipcs.solve(channel)
     #post_processing_ipcs_channel(ipcs, channel)
 
-    #options = {"pol_deg":1}
-    #pH_NS = DualFieldPHNSSolver(options)
-    #pH_NS.solve(beltrami)
+    options = {"pol_deg":1}
+    pH_NS = DualFieldPHNSSolver(options)
+    pH_NS.solve(beltrami)
+    post_processing_pH_NS_beltrami(pH_NS, beltrami)
 
 
 # Log book - Observations
-# divergence is zero only for pol_deg = 1
+# divergence is zero only for pol_deg = 1 for pH_NS solver
 
 
