@@ -6,8 +6,6 @@ from problems.rectangle_problem import *
 from solvers.dfpH_wave_solver import *
 
 if __name__ == '__main__':
-    print("======== Besm Allah Al-Raman Al-Rahim ========")
-
     options = None
 
     # Wave Problem 2D

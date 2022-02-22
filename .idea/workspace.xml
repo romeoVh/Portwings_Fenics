@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="No change">
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="removed math expressions module">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/dfpH_NS_solver.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_dfpH_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_NS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_dfpH_wave.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_wave.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -215,7 +216,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645527970634</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="removed math expressions module">
+      <created>1645533735303</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1645533735304</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -233,7 +241,8 @@
     <MESSAGE value="Added folders structure" />
     <MESSAGE value="Added 2D wave problem and modified solver to handle nD" />
     <MESSAGE value="No change" />
-    <option name="LAST_COMMIT_MESSAGE" value="No change" />
+    <MESSAGE value="removed math expressions module" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed math expressions module" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

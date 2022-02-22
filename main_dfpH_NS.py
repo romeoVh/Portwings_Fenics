@@ -4,8 +4,6 @@ from solvers.dfpH_NS_solver import *
 from solvers.ipcs_solver_new import *
 
 if __name__ == '__main__':
-    print("======== Besm Allah Al-Raman Al-Rahim ========")
-
     options = None
 
     # Beltrami 3D problem
