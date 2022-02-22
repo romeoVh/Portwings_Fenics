@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../NS_pH_simulation/.idea/NS_pH_simulation.iml" filepath="$PROJECT_DIR$/../NS_pH_simulation/.idea/NS_pH_simulation.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/dual_field_pH_sim.iml" filepath="$PROJECT_DIR$/.idea/dual_field_pH_sim.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../pythonProject/.idea/pythonProject.iml" filepath="$PROJECT_DIR$/../pythonProject/.idea/pythonProject.iml" />
+    </modules>
+  </component>
+</project>
