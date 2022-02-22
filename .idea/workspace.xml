@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added 2D wave problem and modified solver to handle nD" />
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added 2D wave problem and modified solver to handle nD">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_dfpH_wave.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_wave.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
