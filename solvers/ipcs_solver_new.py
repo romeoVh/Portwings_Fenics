@@ -21,19 +21,15 @@ class IPCS_Solver(SolverBase):
         self.u = TrialFunction(V)
         self.p = TrialFunction(Q)
 
-
     def __str__(self):
         return "IPCS"
 
-    def calculate_outputs(self):
-        # Calculates ||u_ex_t - u_t||,||p_ex_t - p_t||, H_t, H_ex_t, ||div(u_t)||, ||div(u_ex_t)||
-        err_u = errornorm(self.u_ex_t, self.u_t, norm_type="L2")
-        err_p = errornorm(self.p_ex_t, self.p_t, norm_type="L2")
-        H_ex_t = assemble(self.H_ex_t)
+    def calculate_outputs(self,problem):
+        # Calculates problem specific outputs in addition to H_t & ||div(u_t)||
+        prob_out = problem.calculate_outputs(self.u_t,None,self.p_t)
         H_t = assemble(self.H_t)
         divU = assemble(self.div_u_t)
-        #divUex = assemble(self.div_u_ex_t)
-        return np.array([err_u, err_p, H_t, H_ex_t,divU])
+        return np.append(prob_out,np.array([H_t,divU]))
 
     def weak_form(self,dt,problem):
 
@@ -88,32 +84,31 @@ class IPCS_Solver(SolverBase):
         u_init, w_init, p_init = problem.initial_conditions(V,V,Q) # In 3D, omega is assumed to be in V
         self.u_t.assign(u_init)
         self.p_t.assign(p_init)
-        # Energy of System and divergence
-        self.H_t = 0.5 * (inner(self.u_t, self.u_t) * dx)
-        self.div_u_t = div(self.u_t)* dx
-
-        # Exact State and Energy
-        self.u_ex_t, self.w_ex_t, self.p_ex_t = problem.get_exact_sol_at_t(t_c)
-        self.H_ex_t = 0.5 * (inner(self.u_ex_t, self.u_ex_t) * dx(domain=problem.mesh))
-        #self.div_u_ex_t = div(self.u_ex_t)
 
         # # Set strong boundary conditions
-        u_ex_t_1, w_ex_t_1,p_ex_t_1 = problem.get_exact_sol_at_t(t_1_c)
-        #bcu = [DirichletBC(V, u_ex_t_1, boundary_u_in)]
-        #bcp = [DirichletBC(Q, p_ex_t_1, boundary_p_in)]
-        bcu = [DirichletBC(V, u_ex_t_1, "on_boundary")]
-        bcp = []
+        bcu, bcw, bcp = problem.boundary_conditions(V, None, Q, t_1_c)
+        # Question: Should all boundary conditions be at same time t+1 ?
+
+        # Initialize solver outputs
+        self.H_t = 0.5 * (inner(self.u_t, self.u_t) * dx) # Energy of System
+        self.div_u_t = div(self.u_t)* dx # Divergence of velocity
+
+        # Initialize problem outputs
+        num_outputs_problem =  problem.init_outputs(t_c)
 
         # Define Storage Arrays
-        outputs_arr = np.zeros((1 + n_t, 5))
+        num_outputs = 2
+        self.outputs_arr = np.zeros((1 + n_t, num_outputs_problem+num_outputs))
 
-        # Initial Functionals
-        outputs_arr[0] = self.calculate_outputs()  # ||u_ex_t - u_t||,||p_ex_t - p_t||, H_t, H_ex_t, ||div(u_t)||
-
-        print("Initial outputs for system: ", outputs_arr[0])
+        # Initial Outputs at t=0
+        self.outputs_arr[0] = self.calculate_outputs(problem)
+        print("Initial outputs for system: ", self.outputs_arr[0])
+        # If problem has exact solution then outputs are:
+        # ||u_ex_t - u_t||, N/A, ||p_ex_t - p_t||, H_ex_t, H_t, ||div(u_t)||
+        # else the outputs are
+        # H_t, ||div(u_t)||
 
         # Variational problem definition
-
         self.weak_form(dt,problem)
         # Assemble LHS matrices
         A1 = assemble(self.a1)
@@ -121,7 +116,7 @@ class IPCS_Solver(SolverBase):
         A3 = assemble(self.a3)
 
         print("Computation of the solution with # of DOFs: " + str(num_dof) + ", and deg: ", self.pol_deg)
-        print("==============")
+        print("============================")
 
         self.start_timing()
 
@@ -144,42 +139,25 @@ class IPCS_Solver(SolverBase):
             [bc.apply(A3, b3) for bc in bcu]
             solve(A3, self.u_t_1.vector(), b3, "gmres", "ilu")
 
+            # Update previous values
             self.u_t.assign(self.u_t_1)
             self.p_t.assign(self.p_t_1)
 
+            # Update time variables
             t_c.assign(float(t_c) + dt)
             t_1_c.assign(float(t_1_c) + dt)
 
-            outputs_arr[self._ts] = self.calculate_outputs()
+            # Calculate solver and problem outputs
+            self.outputs_arr[self._ts] = self.calculate_outputs(problem)
             self.update(problem, t)
 
-        plt.subplot(2,2, 1)
-        plt.bar(t_range, outputs_arr[:, 0], width=float(dt) / 2)
-        plt.title("L2 error of u_t")
-        plt.subplot(2, 2, 2)
-        plt.bar(t_range, outputs_arr[:, 1], width=float(dt) / 2)
-        plt.title("L2 error of p_t")
-        plt.subplot(2, 2, 3)
-        plt.plot(t_range, outputs_arr[:, 2:4])
-        plt.legend(['H_t', 'H_ex_t'])
-        plt.subplot(2, 2, 4)
-        plt.plot(t_range,outputs_arr[:, 4])
-        plt.title("divergence error of vector field")
-        plt.show()
-
-# Define strain-rate tensor
+# Define strain-rate tensor expresion
 def epsilon(u):
     "Return symmetric gradient."
     return sym(nabla_grad(u))
 
-# Define stress tensor
+# Define stress tensor expresion
 def sigma(u, p,mu):
     "Return stress tensor."
     return 2 * mu * epsilon(u) - p * Identity(len(u))
 
-
-def boundary_u_in(x, on_boundary):
-    return on_boundary and not near(x[0],1.0)
-
-def boundary_p_in(x, on_boundary):
-    return on_boundary and near(x[0],1.0)

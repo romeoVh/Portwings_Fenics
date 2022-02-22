@@ -134,12 +134,10 @@ class DualFieldPHNSSolver(SolverBase):
         pH_dual.set_initial_condition(xT_init)
 
         # Set strong boundary conditions
-        pH_primal.set_boundary_condition(problem,0,"on_boundary")
+        bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
+        [pH_primal.set_boundary_condition(bc) for bc in bcv]
 
-        #pH_primal.set_boundary_condition(problem, 0, boundary_v_in)
-        #pH_primal.set_boundary_condition(problem, 2, boundary_p_in)
-
-        print(pH_primal.bcArr)
+        # pH_primal.set_boundary_condition_old(problem, 0, DomainBoundary())
 
         # Define Storage Arrays
         outputs_arr_primal = np.zeros((1 + n_t, 6))
@@ -234,10 +232,3 @@ def eta_B1_form(chi_1,wT_1,n_vec,kappa):
 def eta_B2_form(chi_0,vT_2,n_vec):
     form = 0#-chi_0*dot(vT_2,n_vec) * ds
     return form
-
-
-def boundary_v_in(x, on_boundary):
-    return on_boundary and not near(x[0],1.0)
-
-def boundary_p_in(x, on_boundary):
-    return on_boundary and near(x[0],1.0)

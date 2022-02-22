@@ -1,17 +1,16 @@
 
 from problems.problem_base import *
 import numpy as np
-import matplotlib.pyplot as plt
 from math import pi
 import sympy as sym
-# Problem definition
+
 class BeltramiProblem(ProblemBase):
     "3D Beltrami test problem with known analytical solution."
 
     def __init__(self, options):
         ProblemBase.__init__(self, options)
 
-        # Create mesh
+        # Create space-time mesh
         # We start with a UnitCube and modify it to get the mesh we want: (-1, 1) x (-1, 1) x (-1, 1)
         self.mesh = UnitCubeMesh(self.n_el, self.n_el, self.n_el)
         scale = 2 * (self.mesh.coordinates() - 0.5)
@@ -65,24 +64,41 @@ class BeltramiProblem(ProblemBase):
         p_init = interpolate(p_ex, V_p)
         return [v_init,w_init,p_init]
 
-
-    def boundary_conditions(self, V, Q, t):
-        self.exact_u.t = t
-        self.exact_p.t = t
-
-        bc0 = DirichletBC(V, self.exact_u, DomainBoundary())
-
-        bcu = [bc0]
+    def boundary_conditions(self, V_v, V_w,V_p,t_c):
+        bcu = []
+        bcw = []
         bcp = []
 
-        return bcu, bcp
+        v_ex_t_1, w_ex_t_1, p_ex_t_1 = self.get_exact_sol_at_t(t_c)
+
+        # Option 1: All cube faces have v_in
+        bcu.append(DirichletBC(V_v, v_ex_t_1, DomainBoundary()))
+
+        # Option 2: Some cube faces have v_in and some have p_in
+        # bcu.append(DirichletBC(V_v, v_ex_t_1, boundary_v_in))
+        # bcp.append(DirichletBC(V_p, p_ex_t_1, boundary_p_in))
+
+        return bcu,bcw, bcp
 
     def get_exact_sol_at_t(self, t_i):
         _v_ex, _w_ex, _p_ex = self.exact_solution()
         return self.convert_sym_to_expr(t_i, _v_ex, _w_ex, _p_ex)
 
-    def reference(self, t):
-        pass
+    def init_outputs(self, t_c):
+        # 4 outputs --> 3 exact states (velocity , vorticity and pressure) and 1 exact energy at time t
+        self.u_ex_t, self.w_ex_t, self.p_ex_t = self.get_exact_sol_at_t(t_c)
+        self.H_ex_t = 0.5 * (inner(self.u_ex_t, self.u_ex_t) * dx(domain=self.mesh))
+        return 4
+
+    def calculate_outputs(self,u_t,w_t,p_t):
+        err_u = errornorm(self.u_ex_t, u_t, norm_type="L2")
+        if w_t is not None:
+            err_w = errornorm(self.w_ex_t, w_t, norm_type="L2")
+        else:
+            err_w = 0.0 # Indicating that solver has no vorticity information
+        err_p = errornorm(self.p_ex_t, p_t, norm_type="L2")
+        H_ex_t = assemble(self.H_ex_t)
+        return np.array([err_u,err_w,err_p,H_ex_t])
 
     def convert_sym_to_expr(self, t_i, _v_ex, _w_ex, _p_ex, degree=6, show_func=False):
         # Convert from Sympy to Expression for a given time instant or time-variable t_i
@@ -104,3 +120,11 @@ class BeltramiProblem(ProblemBase):
 
     def __str__(self):
         return "Beltrami 3D"
+
+
+# Extra functions to split Domain Boundary for combined velocity-pressure boundary conditions
+def boundary_v_in(x, on_boundary):
+    return on_boundary and not near(x[0],1.0)
+
+def boundary_p_in(x, on_boundary):
+    return on_boundary and near(x[0],1.0)

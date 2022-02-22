@@ -45,13 +45,22 @@ class WeakPortHamiltonianSystemNS:
 
 
 
-    def set_boundary_condition(self,problem,state_index,sub_domain):
+    def set_boundary_condition_old(self,problem,state_index,sub_domain):
         state_ex_t_1 = problem.get_exact_sol_at_t(self.t_1)
+        print(state_ex_t_1[0])
         x = DirichletBC(self.V.sub(state_index), state_ex_t_1[state_index], sub_domain)
         if(self.bcArr is None):
             self.bcArr = [x]
         else:
             self.bcArr.append(x)
+        pass
+
+    def set_boundary_condition(self,bc):
+        if (self.bcArr is None):
+            self.bcArr = [bc]
+        else:
+            self.bcArr.append(bc)
+        pass
 
     def outputs(self):
         # Calculates ||v_ex_t - v_t||,||w_ex_t - w_t||,||p_ex_t - p_t||,||div(u_t)||, H_t, H_ex_t
