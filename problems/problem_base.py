@@ -18,6 +18,7 @@ class ProblemBase:
 
         # Parameters must be defined by subclass
         self.mesh = None
+        self.dimM = None
         self.n_ver = None
         self.dt = None
         self.t_vec = None
@@ -25,6 +26,7 @@ class ProblemBase:
 
     def init_mesh(self,show_mesh = False):
         self.mesh.init()
+        self.dimM = self.mesh.topology().dim()
         print("Initialized Mesh with cells,faces,edges,vertices: ",
               [self.mesh.num_cells(), self.mesh.num_faces(), self.mesh.num_edges(), self.mesh.num_vertices()])
         self.n_ver = FacetNormal(self.mesh)
