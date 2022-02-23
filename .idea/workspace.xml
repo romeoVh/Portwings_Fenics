@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Updated pH_NS solver with new beltrami_problem">
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added mesh visualization without blocking">
+      <change afterPath="$PROJECT_DIR$/problems/driven_cavity_problem.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_dfpH_wave.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_wave.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/problem_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/problem_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_dfpH_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_NS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/problems/beltrami3d_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/beltrami_problem.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/problems/rectangle_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/rectangle_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solvers/dfpH_wave_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/dfpH_wave_solver.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/solvers/ipcs_solver_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/ipcs_solver.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,7 +54,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main_dfpH_wave">
+  <component name="RunManager" selected="Python.main_dfpH_NS">
     <configuration name="Asg_NS_eqns" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NS_pH_simulation" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -182,8 +183,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.main_dfpH_wave" />
         <item itemvalue="Python.main_dfpH_NS" />
+        <item itemvalue="Python.main_dfpH_wave" />
         <item itemvalue="Python.main_backup" />
         <item itemvalue="Python.dfpH_wave_solver" />
         <item itemvalue="Python.Asg_NS_eqns" />
@@ -248,7 +249,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645564006336</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Added mesh visualization without blocking">
+      <created>1645600884423</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1645600884423</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -270,7 +278,8 @@
     <MESSAGE value="removed starting prints" />
     <MESSAGE value="Upgraded strong boundary conditions imposition and outputs calculation" />
     <MESSAGE value="Updated pH_NS solver with new beltrami_problem" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated pH_NS solver with new beltrami_problem" />
+    <MESSAGE value="Added mesh visualization without blocking" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added mesh visualization without blocking" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
