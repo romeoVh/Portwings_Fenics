@@ -94,22 +94,22 @@ class DualFieldPHNSSolver(SolverBase):
         P_2 = FiniteElement("RT", tetrahedron, self.pol_deg)
         P_0 = FiniteElement("CG", tetrahedron, self.pol_deg)
 
-        PT_2 = FiniteElement("RT", tetrahedron, self.pol_deg)
-        PT_1 = FiniteElement("N1curl", tetrahedron, self.pol_deg)
-        PT_3 = FiniteElement("DG", tetrahedron, self.pol_deg - 1)
+        PT_n1 = FiniteElement("RT", tetrahedron, self.pol_deg)
+        PT_n2 = FiniteElement("N1curl", tetrahedron, self.pol_deg)
+        PT_n = FiniteElement("DG", tetrahedron, self.pol_deg - 1)
 
         P_primal = MixedElement([P_1, P_2,P_0])
-        P_dual = MixedElement([PT_2,PT_1,PT_3])
+        P_dual = MixedElement([PT_n1,PT_n2,PT_n])
 
         # Define function spaces
         V_1 = FunctionSpace(mesh, P_1)
         V_2 = FunctionSpace(mesh, P_2)
         V_0 = FunctionSpace(mesh, P_0)
         V_primal = FunctionSpace(mesh, P_primal) # V_1 x V_2 x V_0
-        VT_2 = FunctionSpace(mesh, PT_2)
-        VT_1 = FunctionSpace(mesh, PT_1)
-        VT_3 = FunctionSpace(mesh, PT_3)
-        V_dual = FunctionSpace(mesh, P_dual) # VT_2 x VT_1 x VT_3
+        VT_n1 = FunctionSpace(mesh, PT_n1)
+        VT_n2 = FunctionSpace(mesh, PT_n2)
+        VT_n = FunctionSpace(mesh, PT_n)
+        V_dual = FunctionSpace(mesh, P_dual) # VT_n-1 x VT_n-2 x VT_n
         print("Function Space dimensions, Primal - Dual: ", [V_primal.dim(), V_dual.dim()])
 
         # Define test and trial functions
@@ -117,7 +117,7 @@ class DualFieldPHNSSolver(SolverBase):
 
         # Define Function assigners
         fa_primal = FunctionAssigner(V_primal, [V_1, V_2, V_0])
-        fa_dual = FunctionAssigner(V_dual, [VT_2, VT_1, VT_3])
+        fa_dual = FunctionAssigner(V_dual, [VT_n1, VT_n2, VT_n])
 
         # Define Primal and Dual pH systems
         pH_primal = WeakPortHamiltonianSystemNS(V_primal, problem, "x_k")
@@ -129,7 +129,7 @@ class DualFieldPHNSSolver(SolverBase):
         x_init = Function(V_primal, name="x initial")
         xT_init = Function(V_dual, name="xT initial")
         fa_primal.assign(x_init, problem.initial_conditions(V_1, V_2, V_0))
-        fa_dual.assign(xT_init, problem.initial_conditions(VT_2, VT_1, VT_3))
+        fa_dual.assign(xT_init, problem.initial_conditions(VT_n1, VT_n2, VT_n))
         pH_primal.set_initial_condition(x_init)
         pH_dual.set_initial_condition(xT_init)
 
@@ -153,8 +153,8 @@ class DualFieldPHNSSolver(SolverBase):
 
         # Input for advancing primal system only
         v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(pH_primal.t_mid)
-        input_1 = interpolate(w_ex_tmid,VT_1)
-        input_2 = interpolate(v_ex_tmid, VT_2)
+        input_1 = interpolate(w_ex_tmid,VT_n2)
+        input_2 = interpolate(v_ex_tmid, VT_n1)
 
         # Assemble LHS of Weak form (Single timestep)
         self.assemble_lhs_primal(dt, pH_primal,input_1)
@@ -178,8 +178,8 @@ class DualFieldPHNSSolver(SolverBase):
         # Time loop from t_1 onwards
         for t in tqdm(t_range[2:]):
             # Advance 32 system from t_ii --> t_ii+1
-            input_1 = interpolate(w_ex_tmid, VT_1)
-            input_2 = interpolate(v_ex_tmid, VT_2)
+            input_1 = interpolate(w_ex_tmid, VT_n2)
+            input_2 = interpolate(v_ex_tmid, VT_n1)
             self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
             self.update(problem, dt)
 
