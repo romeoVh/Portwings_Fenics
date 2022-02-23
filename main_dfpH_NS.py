@@ -61,30 +61,30 @@ if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    # options = {"n_el":2,"n_t":100,"t_fin":1.0}
-    # beltrami = BeltramiProblem(options)
+    options = {"n_el":2,"n_t":100,"t_fin":1.0}
+    beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
-    options = {"n_el": 10, "n_t": 500, "t_fin": 6}
-    channel = ChannelProblem(options)
+    # options = {"n_el": 10, "n_t": 500, "t_fin": 6}
+    # channel = ChannelProblem(options)
 
     # Driven Cavity 2D problem
-    #options = {"n_el": 15, "n_t": 500, "t_fin": 10}
-    #cavity = DrivenCavityProblem(options)
+    # options = {"n_el": 15, "n_t": 500, "t_fin": 10}
+    # cavity = DrivenCavityProblem(options)
 
     # 2. Select Solver:
 
     options = {"pol_deg":2}
     ipcs = IPCS_Solver(options)
 
-    # ipcs.solve(beltrami)
-    # post_processing_ipcs_beltrami(ipcs,beltrami)
+    ipcs.solve(beltrami)
+    post_processing_ipcs_beltrami(ipcs,beltrami)
 
-    ipcs.solve(channel)
-    post_processing_ipcs_2d(ipcs, channel)
-    #
-    #ipcs.solve(cavity)
-    #post_processing_ipcs_2d(ipcs, cavity)
+    # ipcs.solve(channel)
+    # post_processing_ipcs_2d(ipcs, channel)
+
+    # ipcs.solve(cavity)
+    # post_processing_ipcs_2d(ipcs, cavity)
 
     # options = {"pol_deg":1}
     # pH_NS = DualFieldPHNSSolver(options)
