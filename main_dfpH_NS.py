@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     ipcs.solve(channel)
     post_processing_ipcs_2d(ipcs, channel)
-
+    #
     #ipcs.solve(cavity)
     #post_processing_ipcs_2d(ipcs, cavity)
 
