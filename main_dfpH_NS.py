@@ -74,11 +74,11 @@ if __name__ == '__main__':
 
     # 2. Select Solver:
 
-    options = {"pol_deg":2}
-    ipcs = IPCS_Solver(options)
+    # options = {"pol_deg":2}
+    # ipcs = IPCS_Solver(options)
 
-    ipcs.solve(beltrami)
-    post_processing_ipcs_beltrami(ipcs,beltrami)
+    # ipcs.solve(beltrami)
+    # post_processing_ipcs_beltrami(ipcs,beltrami)
 
     # ipcs.solve(channel)
     # post_processing_ipcs_2d(ipcs, channel)
@@ -86,10 +86,10 @@ if __name__ == '__main__':
     # ipcs.solve(cavity)
     # post_processing_ipcs_2d(ipcs, cavity)
 
-    # options = {"pol_deg":1}
-    # pH_NS = DualFieldPHNSSolver(options)
-    # pH_NS.solve(beltrami)
-    # post_processing_pH_NS_beltrami(pH_NS, beltrami)
+    options = {"pol_deg":1}
+    pH_NS = DualFieldPHNSSolver(options)
+    pH_NS.solve(beltrami)
+    post_processing_pH_NS_beltrami(pH_NS, beltrami)
 
 
 # Log book - Observations

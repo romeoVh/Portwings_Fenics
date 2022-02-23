@@ -54,11 +54,16 @@ class DualFieldPHNSSolver(SolverBase):
     def time_march_primal(self,dt,pH_P,problem,input_1,input_2):
         b_form_eq1 = (1/dt)*m_1_form(self.chi_1,pH_P.v_t) + 0.5*eta_s_form(self.chi_1,pH_P.v_t,input_1)\
                             +0.5*eta_p_form(self.chi_1,pH_P.p_t)+ 0.5*eta_k_form(self.chi_1,pH_P.w_t,self.kappa)\
-                            + eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)
+                             + eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)
 
         b_form_eq2 = 0.5*eta_p_Tr_form(self.chi_0,pH_P.v_t) + eta_B2_form(self.chi_0,input_2,problem.n_ver)
 
         b_form_eq3 = -0.5*m_2_form(self.chi_2,pH_P.w_t) + 0.5*eta_k_Tr_form(self.chi_2,pH_P.v_t)
+
+        print(np.linalg.norm(assemble(eta_B2_form(self.chi_0,input_2,problem.n_ver)).get_local()))
+
+        # print(np.linalg.norm(assemble(eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)).get_local()))
+        # print(np.linalg.norm(assemble(eta_p_Tr_form(self.chi_0,pH_P.v_t)).get_local()))
 
         # b_form_eq1 = (1 / dt) * m_1_form(self.chi_1, pH_P.v_t) + 0.5 * eta_s_form(self.chi_1, pH_P.v_t, input_1) \
         #              + 0.5 * eta_k_form(self.chi_1, pH_P.w_t, self.kappa)
@@ -69,7 +74,8 @@ class DualFieldPHNSSolver(SolverBase):
 
         b_32 = assemble(b_form_eq1+b_form_eq2+b_form_eq3)
 
-        if not (pH_P.bcArr is None): [bc.apply(pH_P.A, b_32) for bc in pH_P.bcArr]
+        if not (pH_P.bcArr is None):
+            [bc.apply(pH_P.A, b_32) for bc in pH_P.bcArr]
         solve(pH_P.A, pH_P.state_t_1.vector(), b_32, "gmres","hypre_amg")
 
         v_k_1, w_k_1, p_k_1 = pH_P.state_t_1.split(deepcopy=True)
@@ -135,7 +141,7 @@ class DualFieldPHNSSolver(SolverBase):
 
         # Set strong boundary conditions
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
-        [pH_primal.set_boundary_condition(bc) for bc in bcv]
+        # [pH_primal.set_boundary_condition(bc) for bc in bcv]
         # TODO_Later: support multiple inputs for primal system
 
         # Define Storage Arrays
@@ -166,6 +172,8 @@ class DualFieldPHNSSolver(SolverBase):
         print("==============")
 
         self.start_timing()
+        # form = dot(cross(self.chi_1,self.kappa*input_1),problem.n_ver) * ds
+        # print(np.linalg.norm(assemble(form).get_local()))
 
         # Advance dual system from t_0 --> t_1
 
@@ -213,9 +221,9 @@ def eta_k_Tr_form(chi_2,v_1):
     return form
 
 def eta_B1_form(chi_1,wT_1,n_vec,kappa):
-    form = 0# dot(cross(chi_1,kappa*wT_1),n_vec) * ds
+    form = dot(cross(chi_1,kappa*wT_1),n_vec) * ds
     return form
 
 def eta_B2_form(chi_0,vT_2,n_vec):
-    form = 0#-chi_0*dot(vT_2,n_vec) * ds
+    form = -chi_0*dot(vT_2,n_vec) * ds
     return form
