@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added Driven cavity problem">
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Moved functions to problem_base">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/channel_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/channel_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/driven_cavity_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/driven_cavity_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/problem_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/problem_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_dfpH_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_NS.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -261,7 +259,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645602700228</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Moved functions to problem_base">
+      <created>1645602837060</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1645602837060</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -285,7 +290,8 @@
     <MESSAGE value="Updated pH_NS solver with new beltrami_problem" />
     <MESSAGE value="Added mesh visualization without blocking" />
     <MESSAGE value="Added Driven cavity problem" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added Driven cavity problem" />
+    <MESSAGE value="Moved functions to problem_base" />
+    <option name="LAST_COMMIT_MESSAGE" value="Moved functions to problem_base" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

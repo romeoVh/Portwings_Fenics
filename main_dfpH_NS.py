@@ -24,11 +24,13 @@ def post_processing_ipcs_beltrami(ipcs, beltrami):
 
 def post_processing_ipcs_2d(ipcs, problem):
     plt.subplot(2, 2, 1)
-    plot(ipcs.u_t)
+    u_plot = plot(ipcs.u_t)
     plt.title("Velocity plot at t=t_fin")
+    plt.colorbar(u_plot)
     plt.subplot(2, 2, 2)
-    plot(ipcs.p_t)
+    p_plot = plot(ipcs.p_t)
     plt.title("Pressure plot at t=t_fin")
+    plt.colorbar(p_plot)
     plt.subplot(2, 2, 3)
     plt.plot(problem.t_vec, ipcs.outputs_arr[:, 0])
     plt.title("H_t")
