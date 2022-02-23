@@ -1,6 +1,6 @@
 from fenics import *
 
-from numpy import linspace
+from numpy import linspace, array
 import matplotlib.pyplot as plt
 from matplotlib import interactive
 from mshr import *
@@ -50,6 +50,13 @@ class ProblemBase:
 
     def initial_conditions(self, V, Q):
         pass
+
+    def init_outputs(self, t_c):
+        # no outputs
+        return 0
+
+    def calculate_outputs(self,u_t,w_t,p_t):
+        return array([])
 
     def convert_sym(self, name, fun, show_func=False):
         import sympy as sym

@@ -43,12 +43,5 @@ class DrivenCavityProblem(ProblemBase):
 
         return bcu,bcw, bcp
 
-    def init_outputs(self, t_c):
-        # no outputs
-        return 0
-
-    def calculate_outputs(self,u_t,w_t,p_t):
-        return np.array([])
-
     def __str__(self):
         return "DrivenCavity"

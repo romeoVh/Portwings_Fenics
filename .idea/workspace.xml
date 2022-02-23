@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added mesh visualization without blocking">
-      <change afterPath="$PROJECT_DIR$/problems/driven_cavity_problem.py" afterDir="false" />
+    <list default="true" id="a88a21fe-723f-4105-81ac-d2f524682b49" name="Changes" comment="Added Driven cavity problem">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_dfpH_NS.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_dfpH_NS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/beltrami3d_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/beltrami_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/problems/rectangle_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/rectangle_problem.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/solvers/ipcs_solver_new.py" beforeDir="false" afterPath="$PROJECT_DIR$/solvers/ipcs_solver.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/problems/channel_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/channel_problem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/problems/driven_cavity_problem.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/driven_cavity_problem.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/problems/problem_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/problems/problem_base.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,7 +254,14 @@
       <option name="project" value="LOCAL" />
       <updated>1645600884423</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Added Driven cavity problem">
+      <created>1645602700228</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1645602700228</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -279,7 +284,8 @@
     <MESSAGE value="Upgraded strong boundary conditions imposition and outputs calculation" />
     <MESSAGE value="Updated pH_NS solver with new beltrami_problem" />
     <MESSAGE value="Added mesh visualization without blocking" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added mesh visualization without blocking" />
+    <MESSAGE value="Added Driven cavity problem" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added Driven cavity problem" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
