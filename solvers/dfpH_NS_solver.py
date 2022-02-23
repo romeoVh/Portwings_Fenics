@@ -67,19 +67,7 @@ class DualFieldPHNSSolver(SolverBase):
         #
         # b_form_eq3 = 0.0
 
-        b_32 = assemble(b_form_eq1+b_form_eq2+b_form_eq3)
-
-        if not (pH_P.bcArr is None): [bc.apply(pH_P.A, b_32) for bc in pH_P.bcArr]
-        solve(pH_P.A, pH_P.state_t_1.vector(), b_32, "gmres","hypre_amg")
-
-        v_k_1, w_k_1, p_k_1 = pH_P.state_t_1.split(deepcopy=True)
-
-        pH_P.v_t.assign(v_k_1)
-        pH_P.w_t.assign(w_k_1)
-        pH_P.p_t.assign(p_k_1)
-
-        # Advance time step
-        pH_P.advance_time(dt)
+        pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt)
         return pH_P.outputs()
 
     def solve(self, problem):
@@ -136,7 +124,9 @@ class DualFieldPHNSSolver(SolverBase):
         # Set strong boundary conditions
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
         [pH_primal.set_boundary_condition(bc) for bc in bcv]
-        # TODO_Later: support multiple inputs for primal system
+        bcv, bcw, bcp = problem.boundary_conditions(V_dual.sub(0), V_dual.sub(1), V_dual.sub(2), pH_dual.t_1)
+        [pH_dual.set_boundary_condition(bc) for bc in bcv]
+        # TODO_Later: check correct implementation for multiple state inputs on boundary
 
         # Define Storage Arrays
         self.outputs_arr_primal = np.zeros((1 + n_t, 6))
