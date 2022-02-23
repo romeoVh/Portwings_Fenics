@@ -1,7 +1,8 @@
 from fenics import *
 
 from numpy import linspace
-from matplotlib.pyplot import show
+import matplotlib.pyplot as plt
+from matplotlib import interactive
 from mshr import *
 
 class ProblemBase:
@@ -31,8 +32,12 @@ class ProblemBase:
               [self.mesh.num_cells(), self.mesh.num_faces(), self.mesh.num_edges(), self.mesh.num_vertices()])
         self.n_ver = FacetNormal(self.mesh)
         if show_mesh:
+            plt.ion()
             plot(self.mesh,alpha=0.9)
-            show()
+            plt.pause(0.01)
+            #plt.show()
+
+        #plt.show(block=False)
 
     def structured_time_grid(self):
         self.dt = self.t_fin / self.n_t

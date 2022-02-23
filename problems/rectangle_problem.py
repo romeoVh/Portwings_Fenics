@@ -14,7 +14,7 @@ class RectangleProblem(ProblemBase):
 
         # Create mesh
         self.mesh = RectangleMesh(Point(0, 0), Point(1, 0.5), self.n_el, self.n_el)
-        self.init_mesh()
+        self.init_mesh(True)
         self.structured_time_grid()
         # print("Space dimension is :", self.dimM)
 

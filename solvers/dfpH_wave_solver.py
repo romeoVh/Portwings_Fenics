@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from fenics import *
 from time import time
 from tqdm import tqdm
@@ -83,6 +84,8 @@ class DualFieldPHWaveSolver(SolverBase):
             t_range_shifted = t_range
         #print(t_range)
         #print(t_range_shifted)
+        plt.ioff()
+        plt.figure()
         plt.subplot(1,2,1)
         plt.bar(t_range, np.sum(outputs_n_n1[:,0:2], axis=1), width=float(dt) / 2)
         plt.title("L2 error of p and q for primal system")
