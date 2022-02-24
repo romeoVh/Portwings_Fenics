@@ -72,7 +72,8 @@ class BeltramiProblem(ProblemBase):
         v_ex_t_1, w_ex_t_1, p_ex_t_1 = self.get_exact_sol_at_t(t_c)
 
         # Option 1: All cube faces have v_in
-        bcu.append(DirichletBC(V_v, v_ex_t_1, DomainBoundary()))
+        # bcu.append(DirichletBC(V_v, v_ex_t_1, DomainBoundary()))
+        # bcp.append(DirichletBC(V_p, p_ex_t_1, DomainBoundary()))
 
         # Option 2: Some cube faces have v_in and some have p_in
         # bcu.append(DirichletBC(V_v, v_ex_t_1, boundary_v_in))

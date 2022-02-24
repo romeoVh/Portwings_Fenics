@@ -31,11 +31,16 @@ class DualFieldPHNSSolver(SolverBase):
         self.vT , self.wT , self.pT  = split(x_dual)
 
     def assemble_lhs_primal(self,dt,pH_P,input_1):
+
+        # Momentum Equation
         a_form_eq1 = (1/dt)*m_1_form(self.chi_1,self.v)-0.5*eta_s_form(self.chi_1,self.v,input_1) \
                        -0.5*eta_p_form(self.chi_1,self.p) - 0.5*eta_k_form(self.chi_1,self.w,self.kappa)
 
+        # Weak Incompressibility condition
         a_form_eq2 = -0.5*eta_p_Tr_form(self.chi_0,self.v)
 
+        # Careful with the the implicit midpoint rule here
+        # Strong Definition of the vorticity
         a_form_eq3 = 0.5*m_2_form(self.chi_2,self.w) - 0.5*eta_k_Tr_form(self.chi_2,self.v)
 
         # a_form_eq1 = (1 / dt) * m_1_form(self.chi_1, self.v) - 0.5 * eta_s_form(self.chi_1, self.v, input_1) \
@@ -52,15 +57,25 @@ class DualFieldPHNSSolver(SolverBase):
         pH_dual.A = assemble(a_form_dual)
 
     def time_march_primal(self,dt,pH_P,problem,input_1,input_2):
+        # Momentum equation
         b_form_eq1 = (1/dt)*m_1_form(self.chi_1,pH_P.v_t) + 0.5*eta_s_form(self.chi_1,pH_P.v_t,input_1)\
-                            +0.5*eta_p_form(self.chi_1,pH_P.p_t)+ 0.5*eta_k_form(self.chi_1,pH_P.w_t,self.kappa)\
+                             +0.5*eta_p_form(self.chi_1,pH_P.p_t)+ 0.5*eta_k_form(self.chi_1,pH_P.w_t,self.kappa) \
                              + eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)
 
+
+        # Weak Incompressibility condition
         b_form_eq2 = 0.5*eta_p_Tr_form(self.chi_0,pH_P.v_t) + eta_B2_form(self.chi_0,input_2,problem.n_ver)
 
-        b_form_eq3 = -0.5*m_2_form(self.chi_2,pH_P.w_t) + 0.5*eta_k_Tr_form(self.chi_2,pH_P.v_t)
+        # Strong Definition of Vorticity
+        # This is actually identically zero
+        b_form_eq3 = 0 # -0.5*m_2_form(self.chi_2,pH_P.w_t) + 0.5*eta_k_Tr_form(self.chi_2,pH_P.v_t) = 0
 
+        # If the 1 form velocity bc is imposed the B1 term should not play a role
+        # On the other hand the B2 should
+        print("B20")
         print(np.linalg.norm(assemble(eta_B2_form(self.chi_0,input_2,problem.n_ver)).get_local()))
+        # print("B20_mod")
+        # print(np.linalg.norm(assemble(1e-6*eta_B2_form(self.chi_0,input_2,problem.n_ver)).get_local()))
 
         # print(np.linalg.norm(assemble(eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)).get_local()))
         # print(np.linalg.norm(assemble(eta_p_Tr_form(self.chi_0,pH_P.v_t)).get_local()))
@@ -141,7 +156,9 @@ class DualFieldPHNSSolver(SolverBase):
 
         # Set strong boundary conditions
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
-        # [pH_primal.set_boundary_condition(bc) for bc in bcv]
+        [pH_primal.set_boundary_condition(bc) for bc in bcv]
+        [pH_primal.set_boundary_condition(bc) for bc in bcp]
+
         # TODO_Later: support multiple inputs for primal system
 
         # Define Storage Arrays
@@ -187,7 +204,9 @@ class DualFieldPHNSSolver(SolverBase):
         for t in tqdm(t_range[2:]):
             # Advance 32 system from t_ii --> t_ii+1
             input_1 = interpolate(w_ex_tmid, VT_1)
-            input_2 = interpolate(v_ex_tmid, VT_2)
+            # input_2 = interpolate(v_ex_tmid, VT_2)
+            input_2 = 100000*v_ex_tmid
+
             self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
             self.update(problem, dt)
 
