@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":4,"n_t":150,"t_fin":1.0}
+    options = {"n_el":2,"n_t":75,"t_fin":0.5}
     beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
