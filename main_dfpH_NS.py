@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":2,"n_t":50,"t_fin":1.0}
+    options = {"n_el":4,"n_t":150,"t_fin":1.0}
     beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
@@ -91,7 +91,10 @@ if __name__ == '__main__':
     # ipcs.solve(cavity)
     # post_processing_ipcs_2d(ipcs, cavity)
 
-    options = {"pol_deg":1,"stagger_time":False}
+    options = {"pol_deg":1,"stagger_time":True,"couple_primal_dual":True}
+    # Options couple_primal_dual + time_staggering should be always True
+    # Only the Beltrami problem can be tested with either option false
+    # In future, both options should be made True by default
     pH_NS = DualFieldPHNSSolver(options)
     pH_NS.solve(beltrami)
     post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
