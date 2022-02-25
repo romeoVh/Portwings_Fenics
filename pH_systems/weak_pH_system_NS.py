@@ -78,11 +78,11 @@ class WeakPortHamiltonianSystemNS:
         self.t_1.assign(float(self.t_1) + dt)
         self.t_mid.assign(float(self.t_mid)+dt)
 
-    def time_march(self,b_form,dt):
+    def time_march(self,b_form,dt,solver,precond):
         b_mat = assemble(b_form)
 
         if not (self.bcArr is None): [bc.apply(self.A, b_mat) for bc in self.bcArr]
-        solve(self.A, self.state_t_1.vector(), b_mat, "gmres", "hypre_amg")
+        solve(self.A, self.state_t_1.vector(), b_mat, solver, precond)
 
         v_k_1, w_k_1, p_k_1 = self.state_t_1.split(deepcopy=True)
 

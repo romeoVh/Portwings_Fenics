@@ -15,6 +15,10 @@ class DualFieldPHNSSolver(SolverBase):
         self.v = self.w = self.p = None
         self.vT = self.wT = self.pT = None
 
+        self.stagger_time = options["stagger_time"]
+        self.couple_primal_dual = options["couple_primal_dual"]
+
+
     def __str__(self):
         return "DFPH_NS_3D"
 
@@ -30,45 +34,40 @@ class DualFieldPHNSSolver(SolverBase):
         self.v , self.w , self.p  = split(x_primal)
         self.vT , self.wT , self.pT  = split(x_dual)
 
-    def assemble_lhs_primal(self,dt,pH_P,input_1):
-        a_form_eq1 = (1/dt)*m_1_form(self.chi_1,self.v)-0.5*eta_s_form(self.chi_1,self.v,input_1) \
-                       -0.5*eta_p_form(self.chi_1,self.p) - 0.5*eta_k_form(self.chi_1,self.w,self.kappa)
-
-        a_form_eq2 = -0.5*eta_p_Tr_form(self.chi_0,self.v)
-
-        a_form_eq3 = 0.5*m_2_form(self.chi_2,self.w) - 0.5*eta_k_Tr_form(self.chi_2,self.v)
-
-        # a_form_eq1 = (1 / dt) * m_1_form(self.chi_1, self.v) - 0.5 * eta_s_form(self.chi_1, self.v, input_1) \
-        #                     -eta_p_form(self.chi_1,self.p) - 0.5*eta_k_form(self.chi_1,self.w,self.kappa)
-        #
-        # a_form_eq2 = eta_p_Tr_form(self.chi_0,self.v)
-        #
-        # a_form_eq3 = m_2_form(self.chi_2,self.w) - eta_k_Tr_form(self.chi_2,self.v)
-
+    def assemble_lhs_primal(self,dt,pH_P,input_n2):
+        a_form_eq1 = (1/dt) * m_i(self.chi_1, self.v) - 0.5 * eta_s(self.chi_1, self.v, input_n2) \
+                     - 0.5 * eta_p(self.chi_1, self.p) - 0.5 * eta_k(self.chi_1, self.w, self.kappa)
+        a_form_eq2 = -0.5 * eta_p_Tr(self.chi_0, self.v)
+        a_form_eq3 = m_i(self.chi_2, self.w) - eta_k_Tr(self.chi_2, self.v)
         pH_P.A = assemble(a_form_eq1+a_form_eq2+a_form_eq3)
 
-    def assemble_lhs_dual(self,dt,pH_dual):
-        a_form_dual = None#m_form10(self.v_1, self.q_1, self.v_0, self.p_0) - 0.5 * dt * j_form10(self.v_1, self.q_1, self.v_0, self.p_0)
-        pH_dual.A = assemble(a_form_dual)
+    def assemble_lhs_dual(self,dt,pH_D,input_2):
+        a_form_eq1 = (1 / dt) * m_i(self.chiT_2, self.vT) - 0.5 * etaT_s(self.chiT_2, self.vT, input_2) \
+                     - 0.5 * etaT_p(self.chiT_2, self.pT) - 0.5 * etaT_k(self.chiT_2, self.wT, self.kappa)
+        a_form_eq2 = etaT_p_Tr(self.chiT_3, self.vT)
+        a_form_eq3 = 0.5 * m_i(self.chiT_1, self.wT) - 0.5 * etaT_k_Tr(self.chiT_1, self.vT)
+        pH_D.A = assemble(a_form_eq1 + a_form_eq2 + a_form_eq3)
 
-    def time_march_primal(self,dt,pH_P,problem,input_1,input_2):
-        b_form_eq1 = (1/dt)*m_1_form(self.chi_1,pH_P.v_t) + 0.5*eta_s_form(self.chi_1,pH_P.v_t,input_1)\
-                            +0.5*eta_p_form(self.chi_1,pH_P.p_t)+ 0.5*eta_k_form(self.chi_1,pH_P.w_t,self.kappa)\
-                            + eta_B1_form(self.chi_1,input_1,problem.n_ver,self.kappa)
-
-        b_form_eq2 = 0.5*eta_p_Tr_form(self.chi_0,pH_P.v_t) + eta_B2_form(self.chi_0,input_2,problem.n_ver)
-
-        b_form_eq3 = -0.5*m_2_form(self.chi_2,pH_P.w_t) + 0.5*eta_k_Tr_form(self.chi_2,pH_P.v_t)
-
-        # b_form_eq1 = (1 / dt) * m_1_form(self.chi_1, pH_P.v_t) + 0.5 * eta_s_form(self.chi_1, pH_P.v_t, input_1) \
-        #              + 0.5 * eta_k_form(self.chi_1, pH_P.w_t, self.kappa)
-        #
-        # b_form_eq2 = 0.0
-        #
-        # b_form_eq3 = 0.0
-
-        pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt)
+    def time_march_primal(self,dt,pH_P,problem,input_n2,inputB_n2,inputB_n1):
+        b_form_eq1 = (1/dt) * m_i(self.chi_1, pH_P.v_t) + 0.5 * eta_s(self.chi_1, pH_P.v_t, input_n2) \
+                     + 0.5 * eta_p(self.chi_1, pH_P.p_t) + 0.5 * eta_k(self.chi_1, pH_P.w_t, self.kappa) \
+                     + eta_B1(self.chi_1, inputB_n2, problem.n_ver, self.kappa)
+        b_form_eq2 = 0.5 * eta_p_Tr(self.chi_0, pH_P.v_t) + eta_B2(self.chi_0, inputB_n1, problem.n_ver)
+        b_form_eq3 = 0.0
+        pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt,"gmres","amg")
         return pH_P.outputs()
+
+    def time_march_dual(self,dt,pH_D,problem,input_2,inputB_1,inputB_0):
+        b_form_eq1 = (1 / dt) * m_i(self.chiT_2, pH_D.v_t) + 0.5 * etaT_s(self.chiT_2, pH_D.v_t, input_2) \
+                     + 0.5 * etaT_p(self.chiT_2, pH_D.p_t) + 0.5 * etaT_k(self.chiT_2, pH_D.w_t, self.kappa)\
+                    + etaT_B1(self.chiT_2,inputB_0,problem.n_ver)
+        b_form_eq2 = 0.0
+        b_form_eq3 = -0.5 * m_i(self.chiT_1, pH_D.w_t) + 0.5 * etaT_k_Tr(self.chiT_1, pH_D.v_t) \
+                     + etaT_B2(self.chiT_1,inputB_1,problem.n_ver)
+
+        pH_D.time_march(b_form_eq1 + b_form_eq2 + b_form_eq3, dt,"gmres","amg")
+        return pH_D.outputs()
+
 
     def solve(self, problem):
         # Get problem parameters
@@ -122,10 +121,13 @@ class DualFieldPHNSSolver(SolverBase):
         pH_dual.set_initial_condition(xT_init)
 
         # Set strong boundary conditions
+        # primal system --> v_in
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
         [pH_primal.set_boundary_condition(bc) for bc in bcv]
-        bcv, bcw, bcp = problem.boundary_conditions(V_dual.sub(0), V_dual.sub(1), V_dual.sub(2), pH_dual.t_1)
-        [pH_dual.set_boundary_condition(bc) for bc in bcv]
+        # dual system --> w_in
+        bcvT, bcwT, bcpT = problem.boundary_conditions(V_dual.sub(0), V_dual.sub(1), V_dual.sub(2), pH_dual.t_1)
+        # [pH_dual.set_boundary_condition(bc) for bc in bcvT] # Does not converge
+        # [pH_dual.set_boundary_condition(bc) for bc in bcwT]
         # TODO_Later: check correct implementation for multiple state inputs on boundary
 
         # Define Storage Arrays
@@ -142,13 +144,20 @@ class DualFieldPHNSSolver(SolverBase):
         print("Initial outputs for dual system: ", self.outputs_arr_dual[0])
 
         # Input for advancing primal system only
-        v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(pH_primal.t_mid)
-        input_1 = interpolate(w_ex_tmid,VT_n2)
-        input_2 = interpolate(v_ex_tmid, VT_n1)
+        vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(pH_primal.t_mid)
+        input_n2 = interpolate(wT_ex_tmid,VT_n2)
+        input_n1 = interpolate(vT_ex_tmid, VT_n1)
+
+        # Input for advancing dual system only
+        v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(pH_dual.t_mid)
+        input_2 = interpolate(w_ex_tmid, V_2)
+        input_1 = interpolate(v_ex_tmid, V_1)
+        input_0 = interpolate(p_ex_tmid, V_0)
+
 
         # Assemble LHS of Weak form (Single timestep)
-        self.assemble_lhs_primal(dt, pH_primal,input_1)
-        # self.assemble_lhs_dual(dt, pH_dual)
+        self.assemble_lhs_primal(dt, pH_primal,input_n2)
+        self.assemble_lhs_dual(dt, pH_dual,input_2)
 
         print("Computation of the solution with # of DOFs: " + str(num_dof) + ", and deg: ", self.pol_deg)
         if not (pH_primal.bcArr is None): print("Applying Strong Dirichlet B.C to Primal System")
@@ -158,54 +167,123 @@ class DualFieldPHNSSolver(SolverBase):
         self.start_timing()
 
         # Advance dual system from t_0 --> t_1
+        self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, pH_dual, problem,input_2, input_1, input_0)
+        print("Second output for dual system: ", self.outputs_arr_dual[self._ts])
 
         # Advance primal system from t_0 --> t_1
-        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
+        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem,input_n2,input_n2, input_n1 )
         print("Second output for primal system: ", self.outputs_arr_primal[self._ts])
 
         self.update(problem, dt)
 
+        if self.stagger_time:
+            # Time staggering strategy
+            # 1. Average states of dual system at t_0 and t_1 to calculate t_1/2
+            v_init, w_init, p_init = xT_init.split(deepcopy=True)
+            pH_dual.v_t.vector()[:] += v_init.vector()[:]
+            pH_dual.v_t.vector()[:] *= 0.5
+            pH_dual.w_t.vector()[:] += w_init.vector()[:]
+            pH_dual.w_t.vector()[:] *= 0.5
+            pH_dual.p_t.vector()[:] += p_init.vector()[:]
+            pH_dual.p_t.vector()[:] *= 0.5
+
+            # 2. Reassign time variables of dual system to be at 1/2 time steps
+            pH_dual.t.assign(dt / 2.0)
+            pH_dual.t_1.assign((dt / 2.0) + dt)
+            pH_dual.t_mid.assign(dt)
+
         # Time loop from t_1 onwards
         for t in tqdm(t_range[2:]):
-            # Advance 32 system from t_ii --> t_ii+1
-            input_1 = interpolate(w_ex_tmid, VT_n2)
-            input_2 = interpolate(v_ex_tmid, VT_n1)
-            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_1, input_2)
+
+            # Advance dual system from t_kT --> t_kT+1
+            # Get in-domain vorticity input
+            if self.couple_primal_dual:
+                input_2 = pH_primal.w_t
+            else:
+                input_2 = interpolate(w_ex_tmid, V_2) # If exact solution exists
+            # Get weak boundary inputs
+            inputB_1 = interpolate(v_ex_tmid, V_1)
+            inputB_0 = interpolate(p_ex_tmid, V_0)
+            # Advance dual system
+            self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, pH_dual, problem, input_2, inputB_1, inputB_0)
+
+            # Advance primal system from t_k --> t_k+1
+            if self.couple_primal_dual:
+                input_n2 = pH_dual.w_t
+            else:
+                input_n2 = interpolate(w_ex_tmid, VT_n2) # If exact solution exists
+
+            # Advance primal system from t_ii --> t_ii+1
+            inputB_n2 = interpolate(wT_ex_tmid, VT_n2)
+            inputB_n1 = interpolate(vT_ex_tmid, VT_n1)
+            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, pH_primal, problem, input_n2, inputB_n2, inputB_n1)
+
             self.update(problem, dt)
 
+# Generic mass form --> m(.)
 
-def m_1_form(chi_1,v_1):
-    form =  inner(chi_1,v_1) * dx
+def m_i(chi_i, alpha_i):
+    form =  inner(chi_i,alpha_i) * dx
     return form
 
-def m_2_form(chi_2,w_2):
-    form =  inner(chi_2,w_2) * dx
-    return form
+# Primal system weak forms --> eta(.)
+# To be generalized to nD
 
-def eta_s_form(chi_1,v_1,wT_1):
+def eta_s(chi_1, v_1, wT_1):
     form =  -dot(chi_1,cross(wT_1,v_1)) * dx
     return form
 
-def eta_p_form(chi_1,p_0):
+def eta_p(chi_1, p_0):
     form =  -dot(chi_1,grad(p_0)) * dx
     return form
 
-def eta_k_form(chi_1,w_2,kappa):
+def eta_k(chi_1, w_2, kappa):
     form = -dot(curl(chi_1),kappa*w_2) * dx
     return form
 
-def eta_p_Tr_form(chi_0,v_1):
+def eta_p_Tr(chi_0, v_1):
     form = dot(grad(chi_0),v_1) * dx
     return form
 
-def eta_k_Tr_form(chi_2,v_1):
+def eta_k_Tr(chi_2, v_1):
     form = dot(chi_2,curl(v_1)) * dx
     return form
 
-def eta_B1_form(chi_1,wT_1,n_vec,kappa):
-    form = 0# dot(cross(chi_1,kappa*wT_1),n_vec) * ds
+def eta_B1(chi_1, wT_n2, n_vec, kappa):
+    form = dot(cross(chi_1,kappa*wT_n2),n_vec) * ds
     return form
 
-def eta_B2_form(chi_0,vT_2,n_vec):
-    form = 0#-chi_0*dot(vT_2,n_vec) * ds
+def eta_B2(chi_0, vT_n1, n_vec):
+    form = -chi_0*dot(vT_n1,n_vec) * ds
+    return form
+
+# Dual system weak forms --> eta^tilde(.)
+# To be generalized to nD
+
+def etaT_s(chi_2, vT_2, w_2):
+    form = -dot(chi_2,cross(w_2,vT_2)) *dx
+    return form
+
+def etaT_p(chi_2,pT_3):
+    form = dot(div(chi_2),pT_3)* dx
+    return form
+
+def etaT_k(chi_2,wT_1,kappa):
+    form = -dot(chi_2,curl(kappa*wT_1))*dx
+    return form
+
+def etaT_p_Tr(chi_3, vT_2):
+    form = dot(chi_3,div(vT_2)) * dx
+    return form
+
+def etaT_k_Tr(chi_1, vT_2):
+    form = dot(curl(chi_1),vT_2) * dx
+    return form
+
+def etaT_B1(chi_2, p_0, n_vec):
+    form = - p_0*dot(chi_2,n_vec) * ds
+    return form
+
+def etaT_B2(chi_1, v_1, n_vec):
+    form = -dot(cross(chi_1,v_1),n_vec) * ds
     return form

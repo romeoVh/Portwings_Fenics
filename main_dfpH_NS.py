@@ -7,6 +7,7 @@ from solvers.ipcs_solver import *
 
 
 def post_processing_ipcs_beltrami(ipcs, beltrami):
+    plt.figure()
     plt.subplot(2, 2, 1)
     plt.bar(beltrami.t_vec, ipcs.outputs_arr[:, 0], width=float(beltrami.dt) / 2)
     plt.title("L2 error of u_t")
@@ -20,9 +21,9 @@ def post_processing_ipcs_beltrami(ipcs, beltrami):
     plt.subplot(2, 2, 4)
     plt.plot(beltrami.t_vec, ipcs.outputs_arr[:, 5])
     plt.title("divergence error of vector field")
-    plt.show()
 
 def post_processing_ipcs_2d(ipcs, problem):
+    plt.figure()
     plt.subplot(2, 2, 1)
     u_plot = plot(ipcs.u_t)
     plt.title("Velocity plot at t=t_fin")
@@ -37,31 +38,35 @@ def post_processing_ipcs_2d(ipcs, problem):
     plt.subplot(2, 2, 4)
     plt.plot(problem.t_vec, ipcs.outputs_arr[:, 1])
     plt.title("divergence error of vector field")
-    plt.show()
 
-def post_processing_pH_NS_beltrami(pH_NS, beltrami):
+def post_processing_pH_NS_beltrami(outputs_arr, beltrami,stagger_time = False):
+    if stagger_time:
+        t_range = np.roll(beltrami.t_vec, 1) + beltrami.dt / 2.0
+        t_range[0] = 0.0
+    else:
+        t_range = beltrami.t_vec
+    plt.figure()
     plt.subplot(2, 3, 1)
-    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 0], width=float(beltrami.dt) / 2)
+    plt.bar(t_range, outputs_arr[:, 0], width=float(beltrami.dt) / 2)
     plt.title("L2 error of v_t")
     plt.subplot(2, 3, 2)
-    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 1], width=float(beltrami.dt) / 2)
+    plt.bar(t_range, outputs_arr[:, 1], width=float(beltrami.dt) / 2)
     plt.title("L2 error of w_t")
     plt.subplot(2, 3, 3)
-    plt.bar(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 2], width=float(beltrami.dt) / 2)
+    plt.bar(t_range, outputs_arr[:, 2], width=float(beltrami.dt) / 2)
     plt.title("L2 error of p_t")
     plt.subplot(2, 3, 4)
-    plt.plot(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 3:5])
+    plt.plot(t_range, outputs_arr[:, 3:5])
     plt.legend(['H_ex_t', 'H_t'])
     plt.subplot(2, 3, 5)
-    plt.plot(beltrami.t_vec, pH_NS.outputs_arr_primal[:, 5])
+    plt.plot(t_range, outputs_arr[:, 5])
     plt.title("divergence error of vector field")
-    plt.show()
 
 if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":2,"n_t":100,"t_fin":1.0}
+    options = {"n_el":4,"n_t":150,"t_fin":1.0}
     beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
@@ -86,10 +91,16 @@ if __name__ == '__main__':
     # ipcs.solve(cavity)
     # post_processing_ipcs_2d(ipcs, cavity)
 
-    options = {"pol_deg":1}
+    options = {"pol_deg":1,"stagger_time":True,"couple_primal_dual":True}
+    # Options couple_primal_dual + time_staggering should be always True
+    # Only the Beltrami problem can be tested with either option false
+    # In future, both options should be made True by default
     pH_NS = DualFieldPHNSSolver(options)
     pH_NS.solve(beltrami)
-    post_processing_pH_NS_beltrami(pH_NS, beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami)
+    plt.show()
+
 
 
 # Log book - Observations
