@@ -78,6 +78,9 @@ class BeltramiProblem(ProblemBase):
         # bcu.append(DirichletBC(V_v, v_ex_t_1, boundary_v_in))
         # bcp.append(DirichletBC(V_p, p_ex_t_1, boundary_p_in))
 
+        # Option 3: All cubes have w_in
+        bcw.append(DirichletBC(V_w, w_ex_t_1, DomainBoundary()))
+
         return bcu,bcw, bcp
 
     def get_exact_sol_at_t(self, t_i):
