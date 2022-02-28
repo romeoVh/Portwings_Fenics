@@ -10,7 +10,7 @@ class ChannelProblem(ProblemBase):
 
         # Create mesh
         self.mesh = UnitSquareMesh(self.n_el, self.n_el)
-        self.init_mesh()
+        self.init_mesh(True)
         self.structured_time_grid()
 
         # Set viscosity (Re = 8)

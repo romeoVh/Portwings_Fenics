@@ -32,7 +32,7 @@ class ProblemBase:
               [self.mesh.num_cells(), self.mesh.num_faces(), self.mesh.num_edges(), self.mesh.num_vertices()])
         self.n_ver = FacetNormal(self.mesh)
         if show_mesh:
-            plt.ion()
+            #plt.ion()
             plot(self.mesh,alpha=0.9)
             plt.pause(0.01)
             #plt.show()

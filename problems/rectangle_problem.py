@@ -21,7 +21,7 @@ class RectangleProblem(ProblemBase):
 
     def exact_solution(self, time_str='t'):
         # Spatial constants
-        om_x = 1.0
+        om_x = 0.5
         om_y = 1.0
         phi_x = 0.0
         phi_y = 0.0
