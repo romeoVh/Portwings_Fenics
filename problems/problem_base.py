@@ -53,9 +53,9 @@ class ProblemBase:
 
     def init_outputs(self, t_c):
         # no outputs
-        return 0
+        return []
 
-    def calculate_outputs(self,u_t,w_t,p_t):
+    def calculate_outputs(self,exact_arr,u_t,w_t,p_t):
         return array([])
 
     def convert_sym(self, name, fun, show_func=False):
