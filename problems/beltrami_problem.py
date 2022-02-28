@@ -79,7 +79,8 @@ class BeltramiProblem(ProblemBase):
         # bcp.append(DirichletBC(V_p, p_ex_t_1, boundary_p_in))
 
         # Option 3: All cubes have w_in
-        bcw.append(DirichletBC(V_w, w_ex_t_1, DomainBoundary()))
+        if V_w is not None:
+            bcw.append(DirichletBC(V_w, w_ex_t_1, DomainBoundary()))
 
         return bcu,bcw, bcp
 
@@ -89,19 +90,20 @@ class BeltramiProblem(ProblemBase):
 
     def init_outputs(self, t_c):
         # 4 outputs --> 3 exact states (velocity , vorticity and pressure) and 1 exact energy at time t
-        self.u_ex_t, self.w_ex_t, self.p_ex_t = self.get_exact_sol_at_t(t_c)
-        self.H_ex_t = 0.5 * (inner(self.u_ex_t, self.u_ex_t) * dx(domain=self.mesh))
-        return 4
+        u_ex_t, w_ex_t, p_ex_t = self.get_exact_sol_at_t(t_c)
+        H_ex_t = 0.5 * (inner(u_ex_t, u_ex_t) * dx(domain=self.mesh))
+        return [u_ex_t, w_ex_t, p_ex_t,H_ex_t]
 
-    def calculate_outputs(self,u_t,w_t,p_t):
-        err_u = errornorm(self.u_ex_t, u_t, norm_type="L2")
+    def calculate_outputs(self,exact_arr, u_t,w_t,p_t):
+        err_u = errornorm(exact_arr[0], u_t, norm_type="L2")
         if w_t is not None:
-            err_w = errornorm(self.w_ex_t, w_t, norm_type="L2")
+            err_w = errornorm(exact_arr[1], w_t, norm_type="L2")
         else:
             err_w = 0.0 # Indicating that solver has no vorticity information
-        err_p = errornorm(self.p_ex_t, p_t, norm_type="L2")
-        H_ex_t = assemble(self.H_ex_t)
+        err_p = errornorm(exact_arr[2], p_t, norm_type="L2")
+        H_ex_t = assemble(exact_arr[3])
         return np.array([err_u,err_w,err_p,H_ex_t])
+
 
     def convert_sym_to_expr(self, t_i, _v_ex, _w_ex, _p_ex, degree=6, show_func=False):
         # Convert from Sympy to Expression for a given time instant or time-variable t_i

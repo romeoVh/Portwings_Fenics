@@ -55,7 +55,7 @@ class DualFieldPHNSSolver(SolverBase):
         b_form_eq2 = 0.5 * eta_p_Tr(self.chi_0, pH_P.v_t) + eta_B2(self.chi_0, inputB_n1, problem.n_ver)
         b_form_eq3 = 0.0
         pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt,"gmres","amg")
-        return pH_P.outputs()
+        return pH_P.outputs(problem)
 
     def time_march_dual(self,dt,pH_D,problem,input_2,inputB_1,inputB_0):
         b_form_eq1 = (1 / dt) * m_i(self.chiT_n1, pH_D.v_t) + 0.5 * etaT_s(self.chiT_n1, pH_D.v_t, input_2) \
@@ -66,7 +66,7 @@ class DualFieldPHNSSolver(SolverBase):
                      + etaT_B2(self.chiT_n2, inputB_1, problem.n_ver)
 
         pH_D.time_march(b_form_eq1 + b_form_eq2 + b_form_eq3, dt,"gmres","amg")
-        return pH_D.outputs()
+        return pH_D.outputs(problem)
 
 
     def solve(self, problem):
@@ -138,15 +138,20 @@ class DualFieldPHNSSolver(SolverBase):
         # [pH_dual.set_boundary_condition(bc) for bc in bcwT]
         # TODO_Later: check correct implementation for multiple state inputs on boundary
 
+        # Initialize problem outputs
+        pH_primal.prob_output_arr =  problem.init_outputs(pH_primal.t)
+        pH_dual.prob_output_arr =  problem.init_outputs(pH_dual.t)
+
         # Define Storage Arrays
-        self.outputs_arr_primal = np.zeros((1 + n_t, 6))
-        self.outputs_arr_dual = np.zeros((1 + n_t, 6))
+        num_outputs = 2
+        self.outputs_arr_primal = np.zeros((1 + n_t, len(pH_primal.prob_output_arr)+num_outputs))
+        self.outputs_arr_dual = np.zeros((1 + n_t, len(pH_dual.prob_output_arr)+num_outputs))
 
         # Initial Functionals
-        self.outputs_arr_primal[0] = pH_primal.outputs()
-        # ||v_ex_t - v_t||,||w_ex_t - w_t||,||p_ex_t - p_t||,H_ex_t,H_t,||div(u_t)||
-        self.outputs_arr_dual[0] = pH_dual.outputs()
-        # ||v_ex_t - vT_t||,||w_ex_t - wT_t||,||p_ex_t - pT_t||,H_ex_t, HT_t, ||div(vT_t)||
+        self.outputs_arr_primal[0] = pH_primal.outputs(problem)
+        # Problem specific outpus + H_t,||div(u_t)||
+        self.outputs_arr_dual[0] = pH_dual.outputs(problem)
+        # Problem specific outpus + HT_t, ||div(vT_t)||
 
         print("Initial outputs for primal system: ", self.outputs_arr_primal[0])
         print("Initial outputs for dual system: ", self.outputs_arr_dual[0])

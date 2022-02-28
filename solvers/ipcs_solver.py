@@ -26,7 +26,7 @@ class IPCS_Solver(SolverBase):
 
     def calculate_outputs(self,problem):
         # Calculates problem specific outputs in addition to H_t & ||div(u_t)||
-        prob_out = problem.calculate_outputs(self.u_t,None,self.p_t)
+        prob_out = problem.calculate_outputs(self.prob_arr,self.u_t,None,self.p_t)
         H_t = assemble(self.H_t)
         divU = assemble(self.div_u_t)
         return np.append(prob_out,np.array([H_t,divU]))
@@ -94,11 +94,11 @@ class IPCS_Solver(SolverBase):
         self.div_u_t = div(self.u_t)* dx # Divergence of velocity
 
         # Initialize problem outputs
-        num_outputs_problem =  problem.init_outputs(t_c)
+        self.prob_arr =  problem.init_outputs(t_c)
 
         # Define Storage Arrays
         num_outputs = 2
-        self.outputs_arr = np.zeros((1 + n_t, num_outputs_problem+num_outputs))
+        self.outputs_arr = np.zeros((1 + n_t, len(self.prob_arr)+num_outputs))
 
         # Initial Outputs at t=0
         self.outputs_arr[0] = self.calculate_outputs(problem)

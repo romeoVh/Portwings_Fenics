@@ -24,9 +24,10 @@ class WeakPortHamiltonianSystemNS:
         self.H_t = None
         self.div_v_t = None
 
-        # Exact State and Energy
-        self.v_ex_t, self.w_ex_t , self.p_ex_t = problem.get_exact_sol_at_t(self.t)
-        self.H_ex_t = 0.5 * (inner(self.v_ex_t, self.v_ex_t) * dx(domain=problem.mesh))
+        # Exact State and Energy (Moved to problem class - e.g. Beltrami)
+        #self.v_ex_t, self.w_ex_t , self.p_ex_t = problem.get_exact_sol_at_t(self.t)
+        #self.H_ex_t = 0.5 * (inner(self.v_ex_t, self.v_ex_t) * dx(domain=problem.mesh))
+        self.prob_output_arr = None
 
         # Weak form LHS
         self.A = None
@@ -42,8 +43,6 @@ class WeakPortHamiltonianSystemNS:
         # Energy of System and divergence of velocity vector field
         self.H_t = 0.5 * inner(self.v_t, self.v_t) * dx
         self.div_v_t = (div(self.v_t))**2* dx
-
-
 
     def set_boundary_condition_old(self,problem,state_index,sub_domain):
         state_ex_t_1 = problem.get_exact_sol_at_t(self.t_1)
@@ -62,15 +61,12 @@ class WeakPortHamiltonianSystemNS:
             self.bcArr.append(bc)
         pass
 
-    def outputs(self):
-        # Calculates ||v_ex_t - v_t||,||w_ex_t - w_t||,||p_ex_t - p_t||,H_ex_t,H_t,||div(u_t)||
-        err_v = errornorm(self.v_ex_t, self.v_t, norm_type="L2")
-        err_w = errornorm(self.w_ex_t, self.w_t, norm_type="L2")
-        err_p = errornorm(self.p_ex_t, self.p_t, norm_type="L2")
-        H_ex_t = assemble(self.H_ex_t)
+    def outputs(self,problem):
+        # Calculates problem specific outputs in addition to H_t & ||div(u_t)||
+        prob_out = problem.calculate_outputs(self.prob_output_arr,self.v_t,self.w_t,self.p_t)
         div_v = assemble(self.div_v_t)
         H_t = assemble(self.H_t)
-        return np.array([err_v,err_w,err_p,H_ex_t,H_t,div_v])
+        return np.append(prob_out,np.array([H_t,div_v]))
 
 
     def advance_time(self,dt):
