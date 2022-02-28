@@ -10,7 +10,7 @@ class DualFieldPHNSSolver(SolverBase):
         SolverBase.__init__(self, options)
         # Test functions primal and dual
         self.chi_1 = self.chi_2 = self.chi_0 = None
-        self.chiT_2 = self.chiT_1 = self.chiT_3 = None
+        self.chiT_n1 = self.chiT_n2 = self.chiT_n = None
         # Trial functions primal and dual
         self.v = self.w = self.p = None
         self.vT = self.wT = self.pT = None
@@ -26,7 +26,7 @@ class DualFieldPHNSSolver(SolverBase):
         chi_primal = TestFunction(V_primal)
         chi_dual = TestFunction(V_dual)
         self.chi_1 , self.chi_2 , self.chi_0  = split(chi_primal)
-        self.chiT_2 , self.chiT_1 , self.chiT_3  = split(chi_dual)
+        self.chiT_n1 , self.chiT_n2 , self.chiT_n  = split(chi_dual)
 
         # Define Unknown Trial functions
         x_primal = TrialFunction(V_primal)
@@ -42,10 +42,10 @@ class DualFieldPHNSSolver(SolverBase):
         pH_P.A = assemble(a_form_eq1+a_form_eq2+a_form_eq3)
 
     def assemble_lhs_dual(self,dt,pH_D,input_2):
-        a_form_eq1 = (1 / dt) * m_i(self.chiT_2, self.vT) - 0.5 * etaT_s(self.chiT_2, self.vT, input_2) \
-                     - 0.5 * etaT_p(self.chiT_2, self.pT) - 0.5 * etaT_k(self.chiT_2, self.wT, self.kappa)
-        a_form_eq2 = etaT_p_Tr(self.chiT_3, self.vT)
-        a_form_eq3 = 0.5 * m_i(self.chiT_1, self.wT) - 0.5 * etaT_k_Tr(self.chiT_1, self.vT)
+        a_form_eq1 = (1 / dt) * m_i(self.chiT_n1, self.vT) - 0.5 * etaT_s(self.chiT_n1, self.vT, input_2) \
+                     - 0.5 * etaT_p(self.chiT_n1, self.pT) - 0.5 * etaT_k(self.chiT_n1, self.wT, self.kappa)
+        a_form_eq2 = etaT_p_Tr(self.chiT_n, self.vT)
+        a_form_eq3 = 0.5 * m_i(self.chiT_n2, self.wT) - 0.5 * etaT_k_Tr(self.chiT_n2, self.vT)
         pH_D.A = assemble(a_form_eq1 + a_form_eq2 + a_form_eq3)
 
     def time_march_primal(self,dt,pH_P,problem,input_n2,inputB_n2,inputB_n1):
@@ -58,12 +58,12 @@ class DualFieldPHNSSolver(SolverBase):
         return pH_P.outputs()
 
     def time_march_dual(self,dt,pH_D,problem,input_2,inputB_1,inputB_0):
-        b_form_eq1 = (1 / dt) * m_i(self.chiT_2, pH_D.v_t) + 0.5 * etaT_s(self.chiT_2, pH_D.v_t, input_2) \
-                     + 0.5 * etaT_p(self.chiT_2, pH_D.p_t) + 0.5 * etaT_k(self.chiT_2, pH_D.w_t, self.kappa)\
-                    + etaT_B1(self.chiT_2,inputB_0,problem.n_ver)
+        b_form_eq1 = (1 / dt) * m_i(self.chiT_n1, pH_D.v_t) + 0.5 * etaT_s(self.chiT_n1, pH_D.v_t, input_2) \
+                     + 0.5 * etaT_p(self.chiT_n1, pH_D.p_t) + 0.5 * etaT_k(self.chiT_n1, pH_D.w_t, self.kappa) \
+                     + etaT_B1(self.chiT_n1, inputB_0, problem.n_ver)
         b_form_eq2 = 0.0
-        b_form_eq3 = -0.5 * m_i(self.chiT_1, pH_D.w_t) + 0.5 * etaT_k_Tr(self.chiT_1, pH_D.v_t) \
-                     + etaT_B2(self.chiT_1,inputB_1,problem.n_ver)
+        b_form_eq3 = -0.5 * m_i(self.chiT_n2, pH_D.w_t) + 0.5 * etaT_k_Tr(self.chiT_n2, pH_D.v_t) \
+                     + etaT_B2(self.chiT_n2, inputB_1, problem.n_ver)
 
         pH_D.time_march(b_form_eq1 + b_form_eq2 + b_form_eq3, dt,"gmres","amg")
         return pH_D.outputs()
@@ -76,14 +76,22 @@ class DualFieldPHNSSolver(SolverBase):
         self.kappa = problem.mu/problem.rho
         # print("Kinematic viscosity set to: ", self.kappa)
 
-        # Define mixed elements
-        P_1 = FiniteElement("N1curl", tetrahedron, self.pol_deg)
-        P_2 = FiniteElement("RT", tetrahedron, self.pol_deg)
-        P_0 = FiniteElement("CG", tetrahedron, self.pol_deg)
+        # Define primal mixed elements
+        ufl_cell = mesh.ufl_cell()
+        P_1 = FiniteElement("N1curl", ufl_cell, self.pol_deg)
+        P_0 = FiniteElement("CG", ufl_cell, self.pol_deg)
+        if problem.dimM==3:
+            P_2 = FiniteElement("RT", ufl_cell, self.pol_deg)
+        elif problem.dimM==2:
+            P_2 = FiniteElement("DG", ufl_cell, self.pol_deg-1)
 
-        PT_n1 = FiniteElement("RT", tetrahedron, self.pol_deg)
-        PT_n2 = FiniteElement("N1curl", tetrahedron, self.pol_deg)
-        PT_n = FiniteElement("DG", tetrahedron, self.pol_deg - 1)
+        # Define dual mixed elements
+        PT_n1 = FiniteElement("RT", ufl_cell, self.pol_deg)
+        PT_n = FiniteElement("DG", ufl_cell, self.pol_deg - 1)
+        if problem.dimM==3:
+            PT_n2 = FiniteElement("N1curl", ufl_cell, self.pol_deg)
+        elif problem.dimM==2:
+            PT_n2 = FiniteElement("CG", ufl_cell, self.pol_deg)
 
         P_primal = MixedElement([P_1, P_2,P_0])
         P_dual = MixedElement([PT_n1,PT_n2,PT_n])
@@ -110,7 +118,7 @@ class DualFieldPHNSSolver(SolverBase):
         pH_primal = WeakPortHamiltonianSystemNS(V_primal, problem, "x_k")
         pH_dual = WeakPortHamiltonianSystemNS(V_dual, problem, "xT_kT")
         num_dof = np.sum(len(pH_primal.state_t_1.vector()) + len(pH_dual.state_t_1.vector()))
-        print("Num of DOFs: ", num_dof)
+        # print("Num of DOFs: ", num_dof)
 
         # Set initial condition at t=0
         x_init = Function(V_primal, name="x initial")

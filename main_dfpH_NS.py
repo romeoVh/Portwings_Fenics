@@ -98,7 +98,7 @@ if __name__ == '__main__':
     pH_NS = DualFieldPHNSSolver(options)
     pH_NS.solve(beltrami)
     post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
-    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami,True)
     plt.show()
 
 
