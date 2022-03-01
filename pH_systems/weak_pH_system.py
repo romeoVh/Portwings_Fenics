@@ -38,7 +38,7 @@ class WeakPortHamiltonianSystem:
     def set_initial_condition(self,init_cond):
         self.state_t.assign(init_cond)
         self.p_t, self.q_t = self.state_t.split(deepcopy=True)
-        print("Dimensions before and after: ", len(self.state_t.vector()), len(self.p_t.vector()), len(self.q_t.vector()))
+        # print("Dimensions before and after: ", len(self.state_t.vector()), len(self.p_t.vector()), len(self.q_t.vector()))
         # Energy of System
         self.H_t = 0.5 * (inner(self.p_t, self.p_t) * dx + inner(self.q_t, self.q_t) * dx)
 

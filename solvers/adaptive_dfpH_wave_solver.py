@@ -19,6 +19,11 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
         # Trial functions primal and dual
         self.p_n = self.q_n1 = self.p_0 = self.q_1 = None
 
+        # Mesh refinement criterion
+        self.H_diff = None
+        # Boundary normal should be moved from problem class to solver class
+        self.n_vec = None
+
     def init_test_trial_functions(self,V_n_n1,V_0_1):
         v_n_n1 = TestFunction(V_n_n1)
         v_0_1 = TestFunction(V_0_1)
@@ -45,7 +50,7 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
 
     def time_march_primal(self,dt,pH_n_n1,problem,input_0):
         b_form_n_n1 = m_form_n_n1(self.v_n, pH_n_n1.p_t, self.v_n1, pH_n_n1.q_t) \
-                   + dt * (0.5 * j_form_n_n1(self.v_n, pH_n_n1.p_t, self.v_n1, pH_n_n1.q_t)+ bdflow_n_n1(self.v_n1, input_0,problem.n_ver))
+                   + dt * (0.5 * j_form_n_n1(self.v_n, pH_n_n1.p_t, self.v_n1, pH_n_n1.q_t)+ bdflow_n_n1(self.v_n1, input_0,self.n_vec))
         b_n_n1 = assemble(b_form_n_n1)
         if not (pH_n_n1.bcArr is None): [bc.apply(pH_n_n1.A, b_n_n1) for bc in pH_n_n1.bcArr]
         solve(pH_n_n1.A, pH_n_n1.state_t_1.vector(), b_n_n1)
@@ -60,7 +65,7 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
 
     def time_march_dual(self,dt,pH_01,problem,input_n1):
         b_form10 = m_form10(self.v_1, pH_01.q_t, self.v_0, pH_01.p_t) + dt * (
-                    0.5 * j_form10(self.v_1, pH_01.q_t, self.v_0, pH_01.p_t) + bdflow10(self.v_0, input_n1, problem.n_ver))
+                    0.5 * j_form10(self.v_1, pH_01.q_t, self.v_0, pH_01.p_t) + bdflow10(self.v_0, input_n1, self.n_vec))
         b_10 = assemble(b_form10)
         if not (pH_01.bcArr is None): [bc.apply(pH_01.A, b_10) for bc in pH_01.bcArr]
 
@@ -100,22 +105,70 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
         plt.legend(['H_01', 'H_ex'])
         plt.show()
 
-    def plot_states(self,fig_num,pH_sys,mesh,n_t,iter):
+    def debug_mesh_refine(self, fig_num, pH_sys1, pH_sys2, mesh):
         plt.figure(fig_num)
-        plt.subplot(1 + n_t, 3, iter*3+1)
+        plt.subplot(3, 2, 1)
         plot(mesh)
-        plot(pH_sys.p_t)
-        plt.subplot(1 + n_t, 3, iter*3+2)
+        plot(pH_sys1.p_t)
+        plt.subplot(3, 2, 2)
         plot(mesh)
-        plot(pH_sys.q_t)
+        plot(pH_sys1.q_t)
+
+        plt.subplot(3, 2, 3)
+        plot(mesh)
+        plot(pH_sys2.p_t)
+        plt.subplot(3, 2, 4)
+        plot(mesh)
+        plot(pH_sys2.q_t)
 
         # Plot Energy density function
+        plt.subplot(3, 2, 5)
 
-        #print(np.array(pH_sys.q_t.compute_vertex_values(mesh)))
+        H_den_1 = 0.5*(inner(pH_sys1.p_t,pH_sys1.p_t) + inner(pH_sys1.q_t,pH_sys1.q_t))
+        H_den_2 = 0.5 * (inner(pH_sys2.p_t, pH_sys2.p_t) + inner(pH_sys2.q_t, pH_sys2.q_t))
 
-        plt.subplot(1 + n_t, 3, iter *3 + 3)
+        H_diff = project(abs(H_den_1-H_den_2),FunctionSpace(mesh,"DG",self.pol_deg - 1))
         plot(mesh)
+        H_plot = plot(H_diff)
+        plt.colorbar(H_plot,location="bottom")
+        print(np.array(H_diff.vector()))
+
+        # Plot manual markers
+        plt.subplot(3, 2, 6)
+        mf = MeshFunction("bool", mesh, 2)
+        mf.set_all(False)
+        for c in cells(mesh):
+            #print(c.index(),c.midpoint().norm())
+            plt.text(c.midpoint().x(),c.midpoint().y(),str(c.index()))
+            #if c.midpoint().norm()>= 0.5:
+            #    mf[c.index()] = 1.0
+            if H_diff.vector()[c.index()]>= 0.5:
+                mf[c.index()] = True
+            print(c.index(), mf[c.index()])
+        mesh_refined = refine(mesh,mf)
+        plot(mesh_refined)
+        #plot(mf, "Subdomains")
         #plot(pH_sys)
+
+    def init_mesh_adap_criteria(self,pH_n_n1,pH_01):
+        H_den_n_n1 = 0.5 * (inner(pH_n_n1.p_t, pH_n_n1.p_t) + inner(pH_n_n1.q_t, pH_n_n1.q_t))
+        H_den_01 = 0.5 * (inner(pH_01.p_t, pH_01.p_t) + inner(pH_01.q_t, pH_01.q_t))
+        self.H_diff = abs(H_den_n_n1 - H_den_01)
+
+    def update_mesh(self,mesh,tolerance):
+        plt.figure()
+        _H_diff = project(self.H_diff, FunctionSpace(mesh, "DG", self.pol_deg - 1))
+        plot(mesh)
+        H_plot = plot(_H_diff)
+        plt.colorbar(H_plot, location="bottom")
+
+        mf = MeshFunction("bool", mesh, 2)
+        mf.set_all(False)
+        for c in cells(mesh):
+            if _H_diff.vector()[c.index()] >= tolerance:
+                mf[c.index()] = True
+            # print(c.index(), mf[c.index()])
+        return refine(mesh, mf)
 
 
     def solve(self, problem):
@@ -129,63 +182,67 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
         P_n1 = FiniteElement("RT", mesh.ufl_cell(), self.pol_deg)
         P_n = FiniteElement("DG", mesh.ufl_cell(), self.pol_deg - 1)
 
-
-
         P_n_n1 = MixedElement([P_n, P_n1])
-        P_01 = MixedElement([P_0,P_1])
+        P_01 = MixedElement([P_0, P_1])
 
-        # Define function spaces
-        V_n = FunctionSpace(mesh, P_n)
-        V_n1 = FunctionSpace(mesh, P_n1)
-        V_1 = FunctionSpace(mesh, P_1)
-        V_0 = FunctionSpace(mesh, P_0)
-        V_n_n1 = FunctionSpace(mesh, P_n_n1)
-        V_01 = FunctionSpace(mesh, P_01)
-        print("Function Space dimensions: ", [[V_n.dim(), V_n1.dim()], [V_1.dim(), V_0.dim()]])
+        for xx in range(5):
+            self.n_vec = FacetNormal(mesh)
+            # Define function spaces
+            V_n = FunctionSpace(mesh, P_n)
+            V_n1 = FunctionSpace(mesh, P_n1)
+            V_1 = FunctionSpace(mesh, P_1)
+            V_0 = FunctionSpace(mesh, P_0)
+            V_n_n1 = FunctionSpace(mesh, P_n_n1)
+            V_01 = FunctionSpace(mesh, P_01)
+            print("Function Space dimensions: ", [[V_n.dim(), V_n1.dim()], [V_1.dim(), V_0.dim()]])
 
-        # Define test and trial functions
-        self.init_test_trial_functions(V_n_n1,V_01)
+            # Define test and trial functions
+            self.init_test_trial_functions(V_n_n1,V_01)
 
-        # Define Function assigners
-        fa_n_n1 = FunctionAssigner(V_n_n1, [V_n, V_n1])
-        fa_01 = FunctionAssigner(V_01, [V_0, V_1])
+            # Define Function assigners
+            fa_n_n1 = FunctionAssigner(V_n_n1, [V_n, V_n1])
+            fa_01 = FunctionAssigner(V_01, [V_0, V_1])
 
-        # Define Primal and Dual pH systems
-        pH_n_n1 = WeakPortHamiltonianSystem(V_n_n1,problem,"e_n_n1_k")
-        pH_01 = WeakPortHamiltonianSystem(V_01,problem,"e_0_1_kT")
-        #print(pH_n_n1.state_t,pH_n_n1.state_t_1,pH_01.state_t,pH_01.state_t_1)
+            # Define Primal and Dual pH systems
+            pH_n_n1 = WeakPortHamiltonianSystem(V_n_n1,problem,"e_n_n1_k")
+            pH_01 = WeakPortHamiltonianSystem(V_01,problem,"e_0_1_kT")
+            #print(pH_n_n1.state_t,pH_n_n1.state_t_1,pH_01.state_t,pH_01.state_t_1)
 
-        num_dof = np.sum(len(pH_n_n1.state_t_1.vector()) + len(pH_01.state_t_1.vector()))
-        #print(num_dof)
+            num_dof = np.sum(len(pH_n_n1.state_t_1.vector()) + len(pH_01.state_t_1.vector()))
+            #print(num_dof)
 
-        # Set initial condition at t=0
-        e_n_n1_init = Function(V_n_n1, name="e_n_n1 initial")
-        e_01_init = Function(V_01, name="e_0_1 initial")
-        fa_n_n1.assign(e_n_n1_init, problem.initial_conditions(V_n,V_n1))
-        fa_01.assign(e_01_init, problem.initial_conditions(V_0,V_1))
-        pH_n_n1.set_initial_condition(e_n_n1_init)
-        pH_01.set_initial_condition(e_01_init)
+            # Set initial condition at t=0
+            e_n_n1_init = Function(V_n_n1, name="e_n_n1 initial")
+            e_01_init = Function(V_01, name="e_0_1 initial")
+            fa_n_n1.assign(e_n_n1_init, problem.initial_conditions(V_n,V_n1))
+            fa_01.assign(e_01_init, problem.initial_conditions(V_0,V_1))
+            pH_n_n1.set_initial_condition(e_n_n1_init)
+            pH_01.set_initial_condition(e_01_init)
 
-        # Set strong boundary conditions
-        if self.bnd_cond == "N":
-            pH_n_n1.set_boundary_condition(problem,1)
-        elif self.bnd_cond == "D":
-            pH_01.set_boundary_condition(problem,0)
+            # Set strong boundary conditions
+            if self.bnd_cond == "N":
+                pH_n_n1.set_boundary_condition(problem,1)
+            elif self.bnd_cond == "D":
+                pH_01.set_boundary_condition(problem,0)
 
+            # Init mesh adaptation criteria
+            self.init_mesh_adap_criteria(pH_n_n1,pH_01)
 
+            # Define Storage Arrays
+            outputs_n_n1 = np.zeros((1 + n_t, 4))
+            outputs_01 = np.zeros((1 + n_t, 4))
 
-        # Define Storage Arrays
-        outputs_n_n1 = np.zeros((1 + n_t, 4))
-        outputs_01 = np.zeros((1 + n_t, 4))
+            # Initial Functionals
+            outputs_n_n1[0] = pH_n_n1.outputs() # ||p_ex - p_3_t||,||q_ex - q_2_t||, H_32_t, H_ex_t
+            outputs_01[0] = pH_01.outputs() # ||p_ex - p_0_t||,||q_ex - q_1_t||, H_01_t, H_ex_t
 
-        # Initial Functionals
-        outputs_n_n1[0] = pH_n_n1.outputs() # ||p_ex - p_3_t||,||q_ex - q_2_t||, H_32_t, H_ex_t
-        outputs_01[0] = pH_01.outputs() # ||p_ex - p_0_t||,||q_ex - q_1_t||, H_01_t, H_ex_t
+            print("Initial outputs for n n-1 system: ", outputs_n_n1[0])
+            print("Initial outputs for 01 system: ", outputs_01[0])
 
-        print("Initial outputs for n n-1 system: ", outputs_n_n1[0])
-        print("Initial outputs for 01 system: ", outputs_01[0])
+            # Update mesh
+            mesh = self.update_mesh(mesh,0.1)
 
-        self.plot_states(5,pH_01,mesh,n_t,0)
+            # self.debug_mesh_refine(1, pH_01, pH_n_n1, mesh)
 
 
         # Define Test and Trial functions
@@ -207,7 +264,6 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
         input_2 = -interpolate(q_ex_mid_01, V_n1)
         outputs_01[self._ts] = self.time_march_dual(dt,pH_01,problem,input_2)
         # print("Second outputs for 01 system: ", outputs_01[1])
-        self.plot_states(5,pH_01,mesh,n_t,self._ts)
 
         # Advance 32 system from t_0 --> t_1
         p_ex_mid_32, q_ex_mid_32 = problem.get_exact_sol_at_t(pH_n_n1.t_mid)
@@ -245,8 +301,6 @@ class AdaptiveDualFieldPHWaveSolver(SolverBase):
                 input_2 = -interpolate(q_ex_mid_01, V_n1)
 
             outputs_01[self._ts] = self.time_march_dual(dt, pH_01, problem, input_2)
-
-            self.plot_states(5, pH_01, mesh, n_t,self._ts)
 
             # Advance 32 system from t_ii --> t_ii+1
             if self.couple_primal_dual:

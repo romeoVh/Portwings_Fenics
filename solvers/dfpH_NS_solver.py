@@ -131,11 +131,11 @@ class DualFieldPHNSSolver(SolverBase):
         # Set strong boundary conditions
         # primal system --> v_in
         bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), pH_primal.t_1)
-        [pH_primal.set_boundary_condition(bc) for bc in bcv]
+        #[pH_primal.set_boundary_condition(bc) for bc in bcv]
         # dual system --> w_in
         bcvT, bcwT, bcpT = problem.boundary_conditions(V_dual.sub(0), V_dual.sub(1), V_dual.sub(2), pH_dual.t_1)
-        # [pH_dual.set_boundary_condition(bc) for bc in bcvT] # Does not converge
-        # [pH_dual.set_boundary_condition(bc) for bc in bcwT]
+        #[pH_dual.set_boundary_condition(bc) for bc in bcvT] # Does not converge
+        #[pH_dual.set_boundary_condition(bc) for bc in bcwT]
         # TODO_Later: check correct implementation for multiple state inputs on boundary
 
         # Initialize problem outputs
@@ -256,7 +256,7 @@ def eta_k(dimM,chi_1, w_2, kappa):
     if dimM==3:
         form = -dot(curl(chi_1),kappa*w_2) * dx
     elif dimM==2:
-        form = None# Same as 3D but with rot instead of curl
+        form = None# Same as 3D but with rot instead of curl chi_1.dx(0)
 
     return form
 
