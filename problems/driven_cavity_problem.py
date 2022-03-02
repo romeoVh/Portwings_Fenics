@@ -25,7 +25,7 @@ class DrivenCavityProblem(ProblemBase):
         w_init = Constant(0.0)
         p_init = Constant(0.0)
         v_init = interpolate(v_init, V_v)
-        w_init = interpolate(w_init, V_w)
+        if V_w is not None: w_init = interpolate(w_init, V_w)
         p_init = interpolate(p_init, V_p)
         return [v_init,w_init,p_init]
 

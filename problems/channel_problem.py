@@ -19,11 +19,15 @@ class ChannelProblem(ProblemBase):
         self.rho = 1.0
 
     def initial_conditions(self, V_v, V_w, V_p):
-        v_ex = w_ex = Constant((0, 0))
+        v_ex = Constant((0, 0))
+        w_ex = Constant(0)
         p_ex = Expression("1 - x[0]",degree=3)
 
         v_init = interpolate(v_ex, V_v)
-        w_init = interpolate(w_ex, V_w)
+        if V_w is not None:
+            w_init = interpolate(w_ex, V_w)
+        else:
+            w_init = None
         p_init = interpolate(p_ex, V_p)
         return [v_init, w_init, p_init]
 

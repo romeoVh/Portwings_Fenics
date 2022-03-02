@@ -157,12 +157,12 @@ class DualFieldPHNSSolver(SolverBase):
         print("Initial outputs for dual system: ", self.outputs_arr_dual[0])
 
         # Input for advancing primal system only
-        vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.p_h_primal.t_mid)
+        # vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.p_h_primal.t_mid)
         input_n2 = self.pH_dual.w_t # interpolate(wT_ex_tmid,VT_n2)
         input_n1 = self.pH_dual.v_t # interpolate(vT_ex_tmid, VT_n1)
 
         # Input for advancing dual system only
-        v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(self.pH_dual.t_mid)
+        # v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(self.pH_dual.t_mid)
         input_2 = self.p_h_primal.w_t# interpolate(w_ex_tmid, V_2)
         input_1 = self.p_h_primal.v_t# interpolate(v_ex_tmid, V_1)
         input_0 = self.p_h_primal.p_t# interpolate(p_ex_tmid, V_0)

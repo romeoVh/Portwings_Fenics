@@ -60,7 +60,10 @@ class BeltramiProblem(ProblemBase):
         _v_ex, _w_ex, _p_ex = self.exact_solution()
         v_ex, w_ex, p_ex = self.convert_sym_to_expr(0.0, _v_ex, _w_ex, _p_ex)
         v_init = interpolate(v_ex, V_v)
-        w_init = interpolate(w_ex, V_w)
+        if V_w is not None:
+            w_init = interpolate(w_ex, V_w)
+        else:
+            w_init= None
         p_init = interpolate(p_ex, V_p)
         return [v_init,w_init,p_init]
 
