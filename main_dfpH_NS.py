@@ -62,11 +62,29 @@ def post_processing_pH_NS_beltrami(outputs_arr, beltrami,stagger_time = False):
     plt.plot(t_range, outputs_arr[:, 5])
     plt.title("divergence error of vector field")
 
+def post_processing_pH_NS_2d(outputs_arr, beltrami,stagger_time = False):
+    plt.figure()
+    plt.subplot(2, 2, 1)
+    u_plot = plot(ipcs.u_t)
+    plt.title("Velocity plot at t=t_fin")
+    plt.colorbar(u_plot)
+    plt.subplot(2, 2, 2)
+    p_plot = plot(ipcs.p_t)
+    plt.title("Pressure plot at t=t_fin")
+    plt.colorbar(p_plot)
+    plt.subplot(2, 2, 3)
+    plt.plot(problem.t_vec, ipcs.outputs_arr[:, 0])
+    plt.title("H_t")
+    plt.subplot(2, 2, 4)
+    plt.plot(problem.t_vec, ipcs.outputs_arr[:, 1])
+    plt.title("divergence error of vector field")
+
+
 if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":2,"n_t":75,"t_fin":0.5}
+    options = {"n_el":2,"n_t":500,"t_fin":5}
     beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
@@ -74,7 +92,7 @@ if __name__ == '__main__':
     # channel = ChannelProblem(options)
 
     # Driven Cavity 2D problem
-    # options = {"n_el": 15, "n_t": 500, "t_fin": 10}
+    # options = {"n_el": 10, "n_t": 50, "t_fin": 1}
     # cavity = DrivenCavityProblem(options)
 
     # 2. Select Solver:
@@ -95,10 +113,18 @@ if __name__ == '__main__':
     # Options couple_primal_dual + time_staggering should be always True
     # Only the Beltrami problem can be tested with either option false
     # In future, both options should be made True by default
+
     pH_NS = DualFieldPHNSSolver(options)
+
     pH_NS.solve(beltrami)
     post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
     post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami,True)
+
+    # Work in progress
+    # pH_NS.solve(cavity)
+    #post_processing_pH_NS_2d(pH_NS.outputs_arr_primal, beltrami)
+
+
     plt.show()
 
 

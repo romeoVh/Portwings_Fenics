@@ -22,8 +22,11 @@ class DrivenCavityProblem(ProblemBase):
 
     def initial_conditions(self, V_v, V_w, V_p):
         v_init = Constant((0.0, 0.0))
-        w_init = Constant((0.0, 0.0))
+        w_init = Constant(0.0)
         p_init = Constant(0.0)
+        v_init = interpolate(v_init, V_v)
+        w_init = interpolate(w_init, V_w)
+        p_init = interpolate(p_init, V_p)
         return [v_init,w_init,p_init]
 
     def boundary_conditions(self, V_v, V_w,V_p,t_c):
