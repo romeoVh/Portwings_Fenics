@@ -73,7 +73,6 @@ class BeltramiProblem(ProblemBase):
         bcp = []
 
         v_ex_t_1, w_ex_t_1, p_ex_t_1 = self.get_exact_sol_at_t(t_c)
-
         # Option 1: All cube faces have v_in
         bcu.append(DirichletBC(V_v, v_ex_t_1, DomainBoundary()))
 
@@ -97,7 +96,7 @@ class BeltramiProblem(ProblemBase):
         u_ex_t, w_ex_t, p_ex_t = self.get_exact_sol_at_t(t_c)
         H_ex_t = 0.5 * (inner(u_ex_t, u_ex_t) * dx(domain=self.mesh))
         E_ex_t = 0.5 * (inner(w_ex_t, w_ex_t) * dx(domain=self.mesh))
-        Ch_ex_t = E_ex_t#dot(u_ex_t, w_ex_t) * dx(domain=self.mesh)
+        Ch_ex_t = None#(inner(u_ex_t, w_ex_t) * dx(domain=self.mesh))
         return [u_ex_t, w_ex_t, p_ex_t,H_ex_t,E_ex_t,Ch_ex_t]
 
     def calculate_outputs(self,exact_arr, u_t,w_t,p_t):
@@ -109,7 +108,7 @@ class BeltramiProblem(ProblemBase):
         err_p = errornorm(exact_arr[2], p_t, norm_type="L2")
         H_ex_t = assemble(exact_arr[3])
         E_ex_t = assemble(exact_arr[4])
-        Ch_ex_t = assemble(exact_arr[5])
+        Ch_ex_t = 0.0#assemble(exact_arr[5])
         return np.array([err_u,err_w,err_p,H_ex_t,E_ex_t,Ch_ex_t])
 
 
