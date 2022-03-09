@@ -2,6 +2,7 @@ from __future__ import print_function
 from problems.beltrami_problem import *
 from problems.channel_problem import *
 from problems.driven_cavity_problem import *
+from problems.taylor_green import *
 from solvers.dfpH_NS_solver import *
 from solvers.ipcs_solver import *
 
@@ -92,22 +93,42 @@ def post_processing_pH_NS_2d(pH_sys,outputs_arr, problem,stagger_time = False):
     plt.plot(problem.t_vec, outputs_arr[:, 1])
     plt.title("divergence error of vector field")
 
+def post_processing_pH_NS_taylorgreen(outputs_arr, taylorgreen, stagger_time=False):
+    if stagger_time:
+        t_range = np.roll(taylorgreen.t_vec, 1) + taylorgreen.dt / 2.0
+        t_range[0] = 0.0
+    else:
+        t_range = taylorgreen.t_vec
+    plt.figure()
+    plt.subplot(1, 3, 1)
+    plt.plot(t_range, outputs_arr[:, 0])
+    plt.title("Energy")
+    plt.subplot(1, 3, 2)
+    plt.plot(t_range, outputs_arr[:, 1])
+    plt.title('Enstrophy')
+    plt.subplot(1, 3, 3)
+    plt.plot(t_range, outputs_arr[:, 2])
+    plt.title("divergence error of vector field")
+
 
 if __name__ == '__main__':
     # 1. Select Problem:
 
-    # Beltrami 3D problem
-    options = {"n_el":2,"n_t":100,"t_fin":1}
-    beltrami = BeltramiProblem(options)
-
-    # Channel 2D problem
-    options = {"n_el": 8, "n_t": 50, "t_fin": 1}
-    channel = ChannelProblem(options)
+    # # Beltrami 3D problem
+    # options = {"n_el":2,"n_t":100,"t_fin":1}
+    # beltrami = BeltramiProblem(options)
+    #
+    # # Channel 2D problem
+    # options = {"n_el": 8, "n_t": 50, "t_fin": 1}
+    # channel = ChannelProblem(options)
+    #
+    # # Driven Cavity 2D problem
+    # options = {"n_el": 10, "n_t": 100, "t_fin": 2}
+    # cavity = DrivenCavityProblem(options)
 
     # Driven Cavity 2D problem
-    options = {"n_el": 10, "n_t": 100, "t_fin": 2}
-    cavity = DrivenCavityProblem(options)
-
+    options = {"n_el": 5, "n_t": 100, "t_fin": 2}
+    taylorgreen = TaylorGreen(options)
     # 2. Select Solver:
 
     # options = {"pol_deg":2}
@@ -127,9 +148,9 @@ if __name__ == '__main__':
     # --> supplies weak boundary conditions of primal (dual) as outputs of dual (primal)
     pH_NS = DualFieldPHNSSolver(options)
 
-    pH_NS.solve(beltrami)
-    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
-    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami,True)
+    pH_NS.solve(taylorgreen)
+    post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_primal, taylorgreen)
+    post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_dual, taylorgreen,True)
     #
     # # Work in progress
     # pH_NS.solve(cavity)

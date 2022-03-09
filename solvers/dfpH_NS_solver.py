@@ -49,8 +49,8 @@ class DualFieldPHNSSolver(SolverBase):
     def time_march_primal(self,dt,pH_P,problem,input_n2,inputB_n2,inputB_n1):
         b_form_eq1 = (1/dt) * m_i(self.chi_1, pH_P.v_t) + 0.5 * eta_s(problem.dimM,self.chi_1, pH_P.v_t, input_n2) \
                      + 0.5 * eta_p(self.chi_1, pH_P.p_t) + 0.5 * eta_k(problem.dimM,self.chi_1, pH_P.w_t, self.kappa) \
-                     + eta_B1(problem.dimM,self.chi_1, inputB_n2, problem.n_ver, self.kappa)
-        b_form_eq2 = 0.5 * eta_p_Tr(problem.dimM,self.chi_0, pH_P.v_t) + eta_B2(self.chi_0, inputB_n1, problem.n_ver)
+                     + self.bool_bcs_weak * eta_B1(problem.dimM,self.chi_1, inputB_n2, problem.n_ver, self.kappa)
+        b_form_eq2 = 0.5 * eta_p_Tr(problem.dimM,self.chi_0, pH_P.v_t) + self.bool_bcs_weak * eta_B2(self.chi_0, inputB_n1, problem.n_ver)
         b_form_eq3 = 0.0
         pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt,"gmres","amg")
         return pH_P.outputs(problem)
@@ -58,10 +58,10 @@ class DualFieldPHNSSolver(SolverBase):
     def time_march_dual(self,dt,pH_D,problem,input_2,inputB_1,inputB_0):
         b_form_eq1 = (1 / dt) * m_i(self.chiT_n1, pH_D.v_t) + 0.5 * etaT_s(problem.dimM,self.chiT_n1, pH_D.v_t, input_2) \
                      + 0.5 * etaT_p(problem.dimM,self.chiT_n1, pH_D.p_t) + 0.5 * etaT_k(problem.dimM,self.chiT_n1, pH_D.w_t, self.kappa) \
-                     + etaT_B1(problem.dimM,self.chiT_n1, inputB_0, problem.n_ver)
+                     + self.bool_bcs_weak * etaT_B1(problem.dimM,self.chiT_n1, inputB_0, problem.n_ver)
         b_form_eq2 = 0.0
         b_form_eq3 = -0.5 * m_i(self.chiT_n2, pH_D.w_t) + 0.5 * etaT_k_Tr(problem.dimM,self.chiT_n2, pH_D.v_t) \
-                     + etaT_B2(problem.dimM,self.chiT_n2, inputB_1, problem.n_ver)
+                     + self.bool_bcs_weak * etaT_B2(problem.dimM,self.chiT_n2, inputB_1, problem.n_ver)
 
         pH_D.time_march(b_form_eq1 + b_form_eq2 + b_form_eq3, dt,"gmres","amg")
         return pH_D.outputs(problem)
@@ -69,6 +69,9 @@ class DualFieldPHNSSolver(SolverBase):
 
     def solve(self, problem):
         # Get problem parameters
+        self.bool_bcs_weak = 1
+        if problem.__module__.split(".")[-1].lower() == "TaylorGreen":
+            self.bool_bcs_weak = 0
         mesh = problem.mesh
         dt, n_t, t_range = self.timestep(problem)
         self.kappa = problem.mu/problem.rho

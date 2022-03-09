@@ -1,0 +1,47 @@
+
+from problems.problem_base import *
+import numpy as np
+from math import pi
+import sympy as sym
+
+class TaylorGreen(ProblemBase):
+    "2D lid-driven cavity test problem with known reference value."
+    def __init__(self, options):
+        ProblemBase.__init__(self, options)
+
+        # Create space-time mesh
+        # We start with a UnitCube and modify it to get the mesh we want: (-1, 1) x (-1, 1) x (-1, 1)
+        self.mesh = BoxMesh(Point(-pi,-pi, -pi), Point(pi, pi, pi), self.n_el, self.n_el, self.n_el)
+        self.init_mesh()
+        self.structured_time_grid()
+
+        # Set viscosity
+        self.mu = 1.0 / 500
+        # Set density
+        self.rho = 1
+
+    def initial_conditions(self, V_v, V_w, V_p):
+
+        v_0 = ("sin(x[0])*cos(x[1])*cos(x[2])", "-cos(x[0])*sin(x[1])*cos(x[2])", "0")
+        v_ex_0 = Expression(v_0,degree=2)
+        v_init = interpolate(v_ex_0, V_v)
+
+        w_ex_0 = Expression(("-cos(x[0])*sin(x[1])*sin(x[2])", "-sin(x[0])*cos(x[1])*sin(x[2])", \
+                             "2*sin(x[0])*sin(x[1])*cos(x[2])"),degree=2)
+
+        w_init = interpolate(w_ex_0, V_w)
+
+        p_init = interpolate(Constant(0.0), V_p)
+        return [v_init,w_init,p_init]
+
+    def boundary_conditions(self, V_v, V_w,V_p,t_c):
+        # Periodic boundary conditions are simply empty
+        bcu = []
+        bcw = []
+        bcp = []
+
+        return bcu,bcw, bcp
+
+
+    def __str__(self):
+        return "TaylorGreen"
