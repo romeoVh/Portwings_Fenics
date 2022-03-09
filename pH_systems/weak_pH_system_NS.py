@@ -22,6 +22,8 @@ class WeakPortHamiltonianSystemNS:
         self.w_t = None
         self.p_t = None
         self.H_t = None
+        self.E_t = None
+        self.Ch_t = None
         self.div_v_t = None
 
         # Exact State and Energy (Moved to problem class - e.g. Beltrami)
@@ -40,9 +42,15 @@ class WeakPortHamiltonianSystemNS:
         self.state_t.assign(init_cond)
         self.v_t, self.w_t, self.p_t = self.state_t.split(deepcopy=True)
         # print("Dimensions before and after: ", len(self.state_t.vector()), len(self.v_t.vector()), len(self.w_t.vector()), len(self.p_t.vector()))
-        # Energy of System and divergence of velocity vector field
+
+    def init_outputs(self):
+        # 4 outputs:
+        # Energy, Enstrophy and Helicity of System and divergence of velocity vector field
         self.H_t = 0.5 * inner(self.v_t, self.v_t) * dx
-        self.div_v_t = (div(self.v_t))**2* dx
+        self.E_t = 0.5 * inner(self.w_t, self.w_t) * dx
+        self.Ch_t = self.E_t #dot(self.v_t, self.w_t) * dx
+        self.div_v_t = (div(self.v_t)) ** 2 * dx
+        return 4
 
     def set_boundary_condition_old(self,problem,state_index,sub_domain):
         state_ex_t_1 = problem.get_exact_sol_at_t(self.t_1)
@@ -66,7 +74,10 @@ class WeakPortHamiltonianSystemNS:
         prob_out = problem.calculate_outputs(self.prob_output_arr,self.v_t,self.w_t,self.p_t)
         div_v = assemble(self.div_v_t)
         H_t = assemble(self.H_t)
-        return np.append(prob_out,np.array([H_t,div_v]))
+        E_t = assemble(self.E_t)
+        Ch_t = assemble(self.Ch_t)
+
+        return np.append(prob_out,np.array([H_t,E_t,Ch_t,div_v]))
 
 
     def advance_time(self,dt):

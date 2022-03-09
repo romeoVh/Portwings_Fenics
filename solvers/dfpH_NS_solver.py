@@ -142,7 +142,9 @@ class DualFieldPHNSSolver(SolverBase):
         num_prob_outputs = len(self.pH_primal.prob_output_arr)
 
         # Define Storage Arrays
-        num_outputs = 2
+        num_outputs = self.pH_primal.init_outputs()
+        num_outputs = self.pH_dual.init_outputs()
+
         self.outputs_arr_primal = np.zeros((1 + n_t, num_prob_outputs+num_outputs))
         self.outputs_arr_dual = np.zeros((1 + n_t, num_prob_outputs+num_outputs))
 
@@ -266,29 +268,29 @@ def m_i(chi_i, alpha_i):
 
 def eta_s(dimM,chi_1, v_1, wT_n2):
     if dimM==3:
-        form =  -dot(chi_1,cross(wT_n2,v_1)) * dx
+        form =  -inner(chi_1,cross(wT_n2,v_1)) * dx
     elif dimM==2:
         form = -dot(wT_n2, v_1[0]*chi_1[1] - v_1[1]*chi_1[0]) * dx
     return form
 
 def eta_p(chi_1, p_0):
-    form =  -dot(chi_1,grad(p_0)) * dx
+    form =  -inner(chi_1,grad(p_0)) * dx
     return form
 
 def eta_k(dimM,chi_1, w_2, kappa):
     if dimM==3:
-        form = -dot(curl(chi_1),kappa*w_2) * dx
+        form = -inner(curl(chi_1),kappa*w_2) * dx
     elif dimM==2:
         form = -dot(chi_1[0].dx(1)-chi_1[1].dx(0),kappa*w_2) * dx# chi_1.dx(0)
     return form
 
 def eta_p_Tr(dimM,chi_0, v_1):
-    form = pow(-1,dimM-1)*dot(grad(chi_0),v_1) * dx
+    form = pow(-1,dimM-1)*inner(grad(chi_0),v_1) * dx
     return form
 
 def eta_k_Tr(dimM,chi_2, v_1):
     if dimM==3:
-        form = dot(chi_2,curl(v_1)) * dx
+        form = inner(chi_2,curl(v_1)) * dx
     elif dimM==2:
         form = dot(chi_2,v_1[0].dx(1)-v_1[1].dx(0)) * dx
     return form
@@ -309,30 +311,30 @@ def eta_B2(chi_0, vT_n1, n_vec):
 
 def etaT_s(dimM,chi_2, vT_2, w_2):
     if dimM==3:
-        form =  -dot(chi_2,cross(w_2,vT_2)) *dx
+        form =  -inner(chi_2,cross(w_2,vT_2)) *dx
     elif dimM==2:
         form = -dot(w_2, vT_2[0]*chi_2[1] - vT_2[1]*chi_2[0]) * dx
     return form
 
 def etaT_p(dimM,chi_2,pT_3):
-    form = pow(-1,dimM-1)*dot(div(chi_2),pT_3)* dx
+    form = pow(-1,dimM-1)*inner(div(chi_2),pT_3)* dx
     return form
 
 def etaT_k(dimM,chi_2,wT_1,kappa):
     if dimM == 3:
-        form = -dot(chi_2, curl(kappa * wT_1)) * dx
+        form = -inner(chi_2, curl(kappa * wT_1)) * dx
     elif dimM == 2:
         form = dot(chi_2, kappa*as_vector((wT_1.dx(1),-wT_1.dx(0)))) * dx
         # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
     return form
 
 def etaT_p_Tr(chi_3, vT_2):
-    form = dot(chi_3,div(vT_2)) * dx
+    form = inner(chi_3,div(vT_2)) * dx
     return form
 
 def etaT_k_Tr(dimM,chi_1, vT_2):
     if dimM == 3:
-        form = dot(curl(chi_1),vT_2) * dx
+        form = inner(curl(chi_1),vT_2) * dx
     elif dimM == 2:
         form = -dot(as_vector((chi_1.dx(1),-chi_1.dx(0))),vT_2) * dx
     return form
