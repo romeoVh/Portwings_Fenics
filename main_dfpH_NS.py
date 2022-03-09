@@ -88,7 +88,7 @@ if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":2,"n_t":500,"t_fin":5}
+    options = {"n_el":2,"n_t":100,"t_fin":1}
     beltrami = BeltramiProblem(options)
 
     # Channel 2D problem
@@ -96,33 +96,31 @@ if __name__ == '__main__':
     channel = ChannelProblem(options)
 
     # Driven Cavity 2D problem
-    options = {"n_el": 20, "n_t": 500, "t_fin": 10}
+    options = {"n_el": 10, "n_t": 100, "t_fin": 2}
     cavity = DrivenCavityProblem(options)
 
     # 2. Select Solver:
 
-    options = {"pol_deg":2}
-    ipcs = IPCS_Solver(options)
+    # options = {"pol_deg":2}
+    # ipcs = IPCS_Solver(options)
 
     # ipcs.solve(beltrami)
     # post_processing_ipcs_beltrami(ipcs,beltrami)
 
-    ipcs.solve(channel)
-    post_processing_ipcs_2d(ipcs, channel)
+    # ipcs.solve(channel)
+    # post_processing_ipcs_2d(ipcs, channel)
 
     # ipcs.solve(cavity)
     # post_processing_ipcs_2d(ipcs, cavity)
 
-    # options = {"pol_deg":1,"stagger_time":True,"couple_primal_dual":True}
-    # # Options couple_primal_dual + time_staggering should be always True
-    # # Only the Beltrami problem can be tested with either option false
-    # # In future, both options should be made True by default
-    #
-    # pH_NS = DualFieldPHNSSolver(options)
-    #
-    # # pH_NS.solve(beltrami)
-    # # post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
-    # # post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami,True)
+    options = {"pol_deg":1,"couple_primal_dual":True}
+    # couple_primal_dual= True
+    # --> supplies weak boundary conditions of primal (dual) as outputs of dual (primal)
+    pH_NS = DualFieldPHNSSolver(options)
+
+    pH_NS.solve(beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami,True)
     #
     # # Work in progress
     # pH_NS.solve(cavity)

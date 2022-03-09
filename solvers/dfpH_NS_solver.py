@@ -15,9 +15,7 @@ class DualFieldPHNSSolver(SolverBase):
         self.v = self.w = self.p = None
         self.vT = self.wT = self.pT = None
 
-        self.stagger_time = options["stagger_time"]
         self.couple_primal_dual = options["couple_primal_dual"]
-
 
     def __str__(self):
         return "DFPH_NS_3D"
@@ -115,9 +113,9 @@ class DualFieldPHNSSolver(SolverBase):
         fa_dual = FunctionAssigner(V_dual, [VT_n1, VT_n2, VT_n])
 
         # Define Primal and Dual pH systems
-        self.p_h_primal= WeakPortHamiltonianSystemNS(V_primal, problem, "x_k")
+        self.pH_primal= WeakPortHamiltonianSystemNS(V_primal, problem, "x_k")
         self.pH_dual = WeakPortHamiltonianSystemNS(V_dual, problem, "xT_kT")
-        num_dof = np.sum(len(self.p_h_primal.state_t_1.vector()) + len(self.pH_dual.state_t_1.vector()))
+        num_dof = np.sum(len(self.pH_primal.state_t_1.vector()) + len(self.pH_dual.state_t_1.vector()))
         # print("Num of DOFs: ", num_dof)
 
         # Set initial condition at t=0
@@ -125,115 +123,136 @@ class DualFieldPHNSSolver(SolverBase):
         xT_init = Function(V_dual, name="xT initial")
         fa_primal.assign(x_init, problem.initial_conditions(V_1, V_2, V_0))
         fa_dual.assign(xT_init, problem.initial_conditions(VT_n1, VT_n2, VT_n))
-        self.p_h_primal.set_initial_condition(x_init)
+        self.pH_primal.set_initial_condition(x_init)
         self.pH_dual.set_initial_condition(xT_init)
 
         # Set strong boundary conditions
         # primal system --> v_in
-        bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), self.p_h_primal.t_1)
-        [self.p_h_primal.set_boundary_condition(bc) for bc in bcv]
+        bcv, bcw, bcp = problem.boundary_conditions(V_primal.sub(0), V_primal.sub(1), V_primal.sub(2), self.pH_primal.t_1)
+        [self.pH_primal.set_boundary_condition(bc) for bc in bcv]
         # dual system --> w_in
         bcvT, bcwT, bcpT = problem.boundary_conditions(V_dual.sub(0), V_dual.sub(1), V_dual.sub(2), self.pH_dual.t_1)
-        #[pH_dual.set_boundary_condition(bc) for bc in bcvT] # Does not converge
-        #[pH_dual.set_boundary_condition(bc) for bc in bcwT]
+        #[self.pH_dual.set_boundary_condition(bc) for bc in bcvT] # Does not converge
+        # [self.pH_dual.set_boundary_condition(bc) for bc in bcwT]
         # TODO_Later: check correct implementation for multiple state inputs on boundary
 
         # Initialize problem outputs
-        self.p_h_primal.prob_output_arr =  problem.init_outputs(self.p_h_primal.t)
+        self.pH_primal.prob_output_arr =  problem.init_outputs(self.pH_primal.t)
         self.pH_dual.prob_output_arr =  problem.init_outputs(self.pH_dual.t)
+        num_prob_outputs = len(self.pH_primal.prob_output_arr)
 
         # Define Storage Arrays
         num_outputs = 2
-        self.outputs_arr_primal = np.zeros((1 + n_t, len(self.p_h_primal.prob_output_arr)+num_outputs))
-        self.outputs_arr_dual = np.zeros((1 + n_t, len(self.pH_dual.prob_output_arr)+num_outputs))
+        self.outputs_arr_primal = np.zeros((1 + n_t, num_prob_outputs+num_outputs))
+        self.outputs_arr_dual = np.zeros((1 + n_t, num_prob_outputs+num_outputs))
 
         # Initial Functionals
-        self.outputs_arr_primal[0] = self.p_h_primal.outputs(problem)
-        # Problem specific outpus + H_t,||div(u_t)||
+        self.outputs_arr_primal[0] = self.pH_primal.outputs(problem)
+        # Problem specific outpus + H_t,||div(v_t)||
         self.outputs_arr_dual[0] = self.pH_dual.outputs(problem)
         # Problem specific outpus + HT_t, ||div(vT_t)||
 
         print("Initial outputs for primal system: ", self.outputs_arr_primal[0])
         print("Initial outputs for dual system: ", self.outputs_arr_dual[0])
 
-        # Input for advancing primal system only
-        # vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.p_h_primal.t_mid)
-        input_n2 = self.pH_dual.w_t # interpolate(wT_ex_tmid,VT_n2)
-        input_n1 = self.pH_dual.v_t # interpolate(vT_ex_tmid, VT_n1)
-
-        # Input for advancing dual system only
-        # v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(self.pH_dual.t_mid)
-        input_2 = self.p_h_primal.w_t# interpolate(w_ex_tmid, V_2)
-        input_1 = self.p_h_primal.v_t# interpolate(v_ex_tmid, V_1)
-        input_0 = self.p_h_primal.p_t# interpolate(p_ex_tmid, V_0)
-
-
-        # Assemble LHS of Weak form (Single timestep)
-        self.assemble_lhs_primal(dt, self.p_h_primal,problem,input_n2)
-        self.assemble_lhs_dual(dt, self.pH_dual,problem,input_2)
-
         print("Computation of the solution with # of DOFs: " + str(num_dof) + ", and deg: ", self.pol_deg)
-        if not (self.p_h_primal.bcArr is None): print("Applying Strong Dirichlet B.C to Primal System")
+        if not (self.pH_primal.bcArr is None): print("Applying Strong Dirichlet B.C to Primal System")
         if not (self.pH_dual.bcArr is None): print("Applying Strong Dirichlet B.C to Dual System")
         print("==============")
 
         self.start_timing()
 
-        # Advance dual system from t_0 --> t_1
-        self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, self.pH_dual, problem,input_2, input_1, input_0)
+        # ------------------------------------------
+        # Initial time advancement from t_0 to t_1
+        # ------------------------------------------
+        # Current Solution valid if exact solution exists and would be replaced by solving full nonlinear system
+        # 1. Get primal & dual system states at t_1/2
+        v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(self.pH_dual.t_mid)
+        vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.pH_primal.t_mid)
+
+        # 2. Advance primal system
+        input_n2 = interpolate(wT_ex_tmid,VT_n2)
+        input_n1 = interpolate(vT_ex_tmid, VT_n1)
+        self.assemble_lhs_primal(dt, self.pH_primal, problem, input_n2)
+        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal, problem, input_n2, input_n2,
+                                                                   input_n1)
+        print("Second output for primal system: ", self.outputs_arr_primal[self._ts])
+        # 3. Average states of primal system at t_0 and t_1 to calculate t_1/2
+        v_tmid, w_tmid, p_tmid = x_init.split(deepcopy=True)
+        v_tmid.vector()[:] += self.pH_primal.v_t.vector()[:]
+        v_tmid.vector()[:] *= 0.5
+        w_tmid.vector()[:] += self.pH_primal.w_t.vector()[:]
+        w_tmid.vector()[:] *= 0.5
+        p_tmid.vector()[:] += self.pH_primal.p_t.vector()[:]
+        p_tmid.vector()[:] *= 0.5
+        # 4. Advance dual system
+        self.assemble_lhs_dual(dt, self.pH_dual, problem, w_tmid)
+        self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, self.pH_dual, problem,w_tmid, v_tmid, p_tmid)
         print("Second output for dual system: ", self.outputs_arr_dual[self._ts])
 
-        # Advance primal system from t_0 --> t_1
-        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.p_h_primal, problem,input_n2,input_n2, input_n1 )
-        print("Second output for primal system: ", self.outputs_arr_primal[self._ts])
+        # 5. Average states of dual system at t_0 and t_1 to calculate t_1/2
+        vT_init, wT_init, pT_init = xT_init.split(deepcopy=True)
+        self.pH_dual.v_t.vector()[:] += vT_init.vector()[:]
+        self.pH_dual.v_t.vector()[:] *= 0.5
+        self.pH_dual.w_t.vector()[:] += wT_init.vector()[:]
+        self.pH_dual.w_t.vector()[:] *= 0.5
+        self.pH_dual.p_t.vector()[:] += pT_init.vector()[:]
+        self.pH_dual.p_t.vector()[:] *= 0.5
+
+        # 6. Reassign time variables of dual system to be at 1/2 time steps
+        self.pH_dual.t.assign(dt / 2.0)
+        self.pH_dual.t_1.assign((dt / 2.0) + dt)
+        self.pH_dual.t_mid.assign(dt)
+
+        # ------------------------------------------
+        # End of inital time advance
+        # ------------------------------------------
+
+        # # Input for advancing primal system only
+        # # vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.p_h_primal.t_mid)
+        # input_n2 = self.pH_dual.w_t # interpolate(wT_ex_tmid,VT_n2)
+        # input_n1 = self.pH_dual.v_t # interpolate(vT_ex_tmid, VT_n1)
+        #
+        # # Input for advancing dual system only
+        # # v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(self.pH_dual.t_mid)
+        # input_2 = self.p_h_primal.w_t# interpolate(w_ex_tmid, V_2)
+        # input_1 = self.p_h_primal.v_t# interpolate(v_ex_tmid, V_1)
+        # input_0 = self.p_h_primal.p_t# interpolate(p_ex_tmid, V_0)
+
+
 
         self.update(problem, dt)
 
-        if self.stagger_time:
-            # Time staggering strategy
-            # 1. Average states of dual system at t_0 and t_1 to calculate t_1/2
-            v_init, w_init, p_init = xT_init.split(deepcopy=True)
-            self.pH_dual.v_t.vector()[:] += v_init.vector()[:]
-            self.pH_dual.v_t.vector()[:] *= 0.5
-            self.pH_dual.w_t.vector()[:] += w_init.vector()[:]
-            self.pH_dual.w_t.vector()[:] *= 0.5
-            self.pH_dual.p_t.vector()[:] += p_init.vector()[:]
-            self.pH_dual.p_t.vector()[:] *= 0.5
-
-            # 2. Reassign time variables of dual system to be at 1/2 time steps
-            self.pH_dual.t.assign(dt / 2.0)
-            self.pH_dual.t_1.assign((dt / 2.0) + dt)
-            self.pH_dual.t_mid.assign(dt)
-
         # Time loop from t_1 onwards
         for t in tqdm(t_range[2:]):
-
-            # Advance dual system from t_kT --> t_kT+1
-            # Get in-domain vorticity input
-            if self.couple_primal_dual:
-                input_2 = self.p_h_primal.w_t
-            else:
-                input_2 = interpolate(w_ex_tmid, V_2) # If exact solution exists
-            # Get weak boundary inputs
-            # inputB_1 = interpolate(v_ex_tmid, V_1)
-            # inputB_0 = interpolate(p_ex_tmid, V_0)
-            inputB_1 = self.p_h_primal.v_t
-            inputB_0 = self.p_h_primal.p_t
-            # Advance dual system
-            self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, self.pH_dual, problem, input_2, inputB_1, inputB_0)
+            # Question: Do we need to always reassemble the LHS ??
 
             # Advance primal system from t_k --> t_k+1
+            self.assemble_lhs_primal(dt, self.pH_primal, problem, self.pH_dual.w_t)
+            # Get weak boundary inputs
             if self.couple_primal_dual:
                 input_n2 = self.pH_dual.w_t
+                input_n1 = self.pH_dual.v_t
             else:
-                input_n2 = interpolate(w_ex_tmid, VT_n2) # If exact solution exists
+                input_n2 = interpolate(wT_ex_tmid,VT_n2)
+                input_n1 = interpolate(vT_ex_tmid, VT_n1)
+                # Should be changed to get them from problem if False
 
-            # Advance primal system from t_ii --> t_ii+1
-            # inputB_n2 = interpolate(wT_ex_tmid, VT_n2)
-            # inputB_n1 = interpolate(vT_ex_tmid, VT_n1)
-            inputB_n2 = self.pH_dual.w_t
-            inputB_n1 = self.pH_dual.v_t
-            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.p_h_primal, problem, input_n2, inputB_n2, inputB_n1)
+            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal, problem, self.pH_dual.w_t, input_n2,input_n1)
+
+            # Advance dual system from t_kT --> t_kT+1
+            self.assemble_lhs_dual(dt, self.pH_dual, problem, self.pH_primal.w_t)
+            # Get weak boundary inputs
+            if self.couple_primal_dual:
+                input_1 = self.pH_primal.v_t
+                input_0 = self.pH_primal.p_t
+            else:
+                input_1 = interpolate(v_ex_tmid, V_1)
+                input_0 = interpolate(p_ex_tmid, V_0)
+                # Should be changed to get them from problem if False
+
+            self.outputs_arr_dual[self._ts] = self.time_march_dual(dt, self.pH_dual, problem, self.pH_primal.w_t, input_1, input_0)
+
 
             self.update(problem, dt)
 
