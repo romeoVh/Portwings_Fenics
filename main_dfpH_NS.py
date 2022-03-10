@@ -99,12 +99,14 @@ def post_processing_pH_NS_taylorgreen(outputs_arr, taylorgreen, stagger_time=Fal
         t_range[0] = 0.0
     else:
         t_range = taylorgreen.t_vec
+
+    V = 8*pi**3
     plt.figure()
     plt.subplot(1, 3, 1)
-    plt.plot(t_range, outputs_arr[:, 0])
+    plt.plot(t_range, outputs_arr[:, 0]/V)
     plt.title("Energy")
     plt.subplot(1, 3, 2)
-    plt.plot(t_range, outputs_arr[:, 1])
+    plt.plot(t_range, outputs_arr[:, 1]/V)
     plt.title('Enstrophy')
     plt.subplot(1, 3, 3)
     plt.plot(t_range, outputs_arr[:, 2])
@@ -114,9 +116,9 @@ def post_processing_pH_NS_taylorgreen(outputs_arr, taylorgreen, stagger_time=Fal
 if __name__ == '__main__':
     # 1. Select Problem:
 
-    # # Beltrami 3D problem
-    # options = {"n_el":2,"n_t":100,"t_fin":1}
-    # beltrami = BeltramiProblem(options)
+    # Beltrami 3D problem
+    options = {"n_el":5,"n_t":100,"t_fin":.1}
+    beltrami = BeltramiProblem(options)
     #
     # # Channel 2D problem
     # options = {"n_el": 8, "n_t": 50, "t_fin": 1}
@@ -127,8 +129,8 @@ if __name__ == '__main__':
     # cavity = DrivenCavityProblem(options)
 
     # Driven Cavity 2D problem
-    options = {"n_el": 5, "n_t": 100, "t_fin": 2}
-    taylorgreen = TaylorGreen(options)
+    # options = {"n_el": 1, "n_t": 10, "t_fin":.002}
+    # taylorgreen = TaylorGreen(options)
     # 2. Select Solver:
 
     # options = {"pol_deg":2}
@@ -148,9 +150,13 @@ if __name__ == '__main__':
     # --> supplies weak boundary conditions of primal (dual) as outputs of dual (primal)
     pH_NS = DualFieldPHNSSolver(options)
 
-    pH_NS.solve(taylorgreen)
-    post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_primal, taylorgreen)
-    post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_dual, taylorgreen,True)
+    pH_NS.solve(beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_primal, beltrami)
+    post_processing_pH_NS_beltrami(pH_NS.outputs_arr_dual, beltrami, True)
+
+    # pH_NS.solve(taylorgreen)
+    # post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_primal, taylorgreen)
+    # post_processing_pH_NS_taylorgreen(pH_NS.outputs_arr_dual, taylorgreen,True)
     #
     # # Work in progress
     # pH_NS.solve(cavity)
