@@ -60,7 +60,10 @@ class BeltramiProblem(ProblemBase):
         _v_ex, _w_ex, _p_ex = self.exact_solution()
         v_ex, w_ex, p_ex = self.convert_sym_to_expr(0.0, _v_ex, _w_ex, _p_ex)
         v_init = interpolate(v_ex, V_v)
-        w_init = interpolate(w_ex, V_w)
+        if V_w is not None:
+            w_init = interpolate(w_ex, V_w)
+        else:
+            w_init= None
         p_init = interpolate(p_ex, V_p)
         return [v_init,w_init,p_init]
 
@@ -70,7 +73,6 @@ class BeltramiProblem(ProblemBase):
         bcp = []
 
         v_ex_t_1, w_ex_t_1, p_ex_t_1 = self.get_exact_sol_at_t(t_c)
-
         # Option 1: All cube faces have v_in
         bcu.append(DirichletBC(V_v, v_ex_t_1, DomainBoundary()))
 
@@ -89,10 +91,13 @@ class BeltramiProblem(ProblemBase):
         return self.convert_sym_to_expr(t_i, _v_ex, _w_ex, _p_ex)
 
     def init_outputs(self, t_c):
-        # 4 outputs --> 3 exact states (velocity , vorticity and pressure) and 1 exact energy at time t
+        # 6 outputs --> 3 exact states (velocity , vorticity and pressure)
+        # and 3 exact integral quantities at time t (energy, enstrophy, helicity)
         u_ex_t, w_ex_t, p_ex_t = self.get_exact_sol_at_t(t_c)
         H_ex_t = 0.5 * (inner(u_ex_t, u_ex_t) * dx(domain=self.mesh))
-        return [u_ex_t, w_ex_t, p_ex_t,H_ex_t]
+        E_ex_t = 0.5 * (inner(w_ex_t, w_ex_t) * dx(domain=self.mesh))
+        Ch_ex_t = None#(inner(u_ex_t, w_ex_t) * dx(domain=self.mesh))
+        return [u_ex_t, w_ex_t, p_ex_t,H_ex_t,E_ex_t,Ch_ex_t]
 
     def calculate_outputs(self,exact_arr, u_t,w_t,p_t):
         err_u = errornorm(exact_arr[0], u_t, norm_type="L2")
@@ -102,7 +107,9 @@ class BeltramiProblem(ProblemBase):
             err_w = 0.0 # Indicating that solver has no vorticity information
         err_p = errornorm(exact_arr[2], p_t, norm_type="L2")
         H_ex_t = assemble(exact_arr[3])
-        return np.array([err_u,err_w,err_p,H_ex_t])
+        E_ex_t = assemble(exact_arr[4])
+        Ch_ex_t = 0.0#assemble(exact_arr[5])
+        return np.array([err_u,err_w,err_p,H_ex_t,E_ex_t,Ch_ex_t])
 
 
     def convert_sym_to_expr(self, t_i, _v_ex, _w_ex, _p_ex, degree=6, show_func=False):

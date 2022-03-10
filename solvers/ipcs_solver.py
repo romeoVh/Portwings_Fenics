@@ -81,7 +81,7 @@ class IPCS_Solver(SolverBase):
 
 
         # Set initial condition at t=0
-        u_init, w_init, p_init = problem.initial_conditions(V,V,Q) # In 3D, omega is assumed to be in V
+        u_init, w_init, p_init = problem.initial_conditions(V,None,Q)
         self.u_t.assign(u_init)
         self.p_t.assign(p_init)
 
