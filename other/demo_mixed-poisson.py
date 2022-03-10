@@ -2,16 +2,16 @@ from dolfin import *
 import matplotlib.pyplot as plt
 
 # Create mesh
-mesh = UnitSquareMesh(16, 16)
+mesh = UnitSquareMesh(32, 32)
 n_vec = FacetNormal(mesh)
 
 # Define source functions
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)",degree=3)
 g = Expression("sin(5.0*x[0])",degree=3)
-u_0 = Expression("(1.0)",degree=3)
+u_0 = Expression("(0.0)",degree=3)
 
 # Polynomial degree
-pol_deg = 1
+pol_deg = 2
 
 ########################################################################
 #                        Primal formulation
@@ -87,16 +87,20 @@ class BoundarySource(UserExpression):
 G = BoundarySource(mesh, degree=3)
 
 # Define essential BC on Gamma_N
-def boundary_N(x):
-    return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS
+def boundary_N_1(x):
+    return x[1] < DOLFIN_EPS
 
-bc = DirichletBC(W_d.sub(0), G, boundary_N)
+def boundary_N_2(x):
+    return x[1] > 1.0 - DOLFIN_EPS
+
+bc = [DirichletBC(W_d.sub(0), G, boundary_N_1),DirichletBC(W_d.sub(0), G, boundary_N_2)]
 
 # Test Implementation of essential boundary condition:
-g_vec_exp = ("-sin(5.0*x[0])","-sin(5.0*x[0])")
-g_vec = Expression(g_vec_exp,degree=3)
-
-#bc = DirichletBC(W_d.sub(0), g_vec, boundary_N)
+g_vec_exp_bot = ("0.0","sin(5.0*x[0])")
+g_vec_bot = Expression(g_vec_exp_bot,degree=3)
+g_vec_exp_top = ("1.0e6","-sin(5.0*x[0])")
+g_vec_top = Expression(g_vec_exp_top,degree=3)
+#bc = [DirichletBC(W_d.sub(0), g_vec_bot, boundary_N_1),DirichletBC(W_d.sub(0), g_vec_top, boundary_N_2)]
 
 
 # Compute solution
