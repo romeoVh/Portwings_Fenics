@@ -162,6 +162,8 @@ class DualFieldPHNSSolver(SolverBase):
         input_n1 = interpolate(vT_ex_tmid, VT_n1)
 
         # Input for advancing dual system only
+        # Check how to incorporate coupling between numerical vorticity
+
         v_ex_tmid, w_ex_tmid, p_ex_tmid = problem.get_exact_sol_at_t(pH_dual.t_mid)
         input_2 = interpolate(w_ex_tmid, V_2)
         input_1 = interpolate(v_ex_tmid, V_1)
