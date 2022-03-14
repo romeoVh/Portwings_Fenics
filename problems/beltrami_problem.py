@@ -22,6 +22,10 @@ class BeltramiProblem(ProblemBase):
         self.mu = 1.0
         # Set density
         self.rho = 1.0
+        # Not periodic
+        self.periodic = False
+        # Exact solution
+        self.exact = True
 
     def exact_solution(self, time_str='t'):
         from sympy import exp as Exp

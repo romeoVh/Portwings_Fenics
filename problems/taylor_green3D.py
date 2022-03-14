@@ -4,13 +4,11 @@ import numpy as np
 from math import pi
 import sympy as sym
 
-class TaylorGreen(ProblemBase):
-    "2D lid-driven cavity test problem with known reference value."
+class TaylorGreen3D(ProblemBase):
+    "3D Taylor Green problem."
     def __init__(self, options):
         ProblemBase.__init__(self, options)
 
-        # Create space-time mesh
-        # We start with a UnitCube and modify it to get the mesh we want: (-1, 1) x (-1, 1) x (-1, 1)
         self.mesh = BoxMesh(Point(-pi,-pi, -pi), Point(pi, pi, pi), self.n_el, self.n_el, self.n_el)
         self.init_mesh()
         self.structured_time_grid()
@@ -19,6 +17,10 @@ class TaylorGreen(ProblemBase):
         self.mu = 1.0 / 500
         # Set density
         self.rho = 1
+        # Periodic problem
+        self.periodic = True
+        # Solution is not exact
+        self.exact = False
 
     def initial_conditions(self, V_v, V_w, V_p):
 
@@ -28,9 +30,7 @@ class TaylorGreen(ProblemBase):
 
         w_0 = ("-cos(x[0])*sin(x[1])*sin(x[2])", "-sin(x[0])*cos(x[1])*sin(x[2])", "2*sin(x[0])*sin(x[1])*cos(x[2])")
         w_ex_0 = Expression(w_0, degree=2)
-
         w_init = interpolate(w_ex_0, V_w)
-
 
         p_0 = "1/16*(cos(2*x[0]) + cos(2*x[1]))*(cos(2*x[2]) + 2)"
         p_ex_0 = Expression(p_0, degree=2)
@@ -47,4 +47,4 @@ class TaylorGreen(ProblemBase):
 
 
     def __str__(self):
-        return "TaylorGreen"
+        return "TaylorGreen3D"

@@ -2,7 +2,7 @@ from __future__ import print_function
 from problems.beltrami_problem import *
 from problems.channel_problem import *
 from problems.driven_cavity_problem import *
-from problems.taylor_green import *
+from problems.taylor_green3D import *
 from solvers.dfpH_NS_solver import *
 from solvers.ipcs_solver import *
 
