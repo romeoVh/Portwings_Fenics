@@ -29,19 +29,19 @@ class DualFieldPHNSSolver(SolverBase):
         # Define Unknown Trial functions
         x_primal = TrialFunction(V_primal)
         x_dual = TrialFunction(V_dual)
-        self.v , self.w , self.p  = split(x_primal)
-        self.vT , self.wT , self.pT  = split(x_dual)
+        self.v, self.w, self.p  = split(x_primal)
+        self.vT, self.wT, self.pT  = split(x_dual)
 
     def assemble_lhs_primal(self,dt,pH_P,problem,input_n2):
         a_form_eq1 = (1/dt) * m_i(self.chi_1, self.v) - 0.5 * eta_s(problem.dimM,self.chi_1, self.v, input_n2) \
                      - 0.5 * eta_p(self.chi_1, self.p) - 0.5 * eta_k(problem.dimM,self.chi_1, self.w, self.kappa)
-        a_form_eq2 = -0.5 * eta_p_Tr(problem.dimM,self.chi_0, self.v)
+        a_form_eq2 = -0.5 * eta_p_Tr(self.chi_0, self.v)
         a_form_eq3 = m_i(self.chi_2, self.w) - eta_k_Tr(problem.dimM,self.chi_2, self.v)
         pH_P.A = assemble(a_form_eq1+a_form_eq2+a_form_eq3)
 
     def assemble_lhs_dual(self,dt,pH_D,problem,input_2):
         a_form_eq1 = (1 / dt) * m_i(self.chiT_n1, self.vT) - 0.5 * etaT_s(problem.dimM,self.chiT_n1, self.vT, input_2) \
-                     - 0.5 * etaT_p(problem.dimM,self.chiT_n1, self.pT) - 0.5 * etaT_k(problem.dimM,self.chiT_n1, self.wT, self.kappa)
+                     - 0.5 * etaT_p(self.chiT_n1, self.pT) - 0.5 * etaT_k(problem.dimM,self.chiT_n1, self.wT, self.kappa)
         a_form_eq2 = etaT_p_Tr(self.chiT_n, self.vT)
         a_form_eq3 = 0.5 * m_i(self.chiT_n2, self.wT) - 0.5 * etaT_k_Tr(problem.dimM,self.chiT_n2, self.vT)
         pH_D.A = assemble(a_form_eq1 + a_form_eq2 + a_form_eq3)
@@ -50,15 +50,15 @@ class DualFieldPHNSSolver(SolverBase):
         b_form_eq1 = (1/dt) * m_i(self.chi_1, pH_P.v_t) + 0.5 * eta_s(problem.dimM,self.chi_1, pH_P.v_t, input_n2) \
                      + 0.5 * eta_p(self.chi_1, pH_P.p_t) + 0.5 * eta_k(problem.dimM,self.chi_1, pH_P.w_t, self.kappa) \
                      + self.bool_bcs_weak * eta_B1(problem.dimM,self.chi_1, inputB_n2, problem.n_ver, self.kappa)
-        b_form_eq2 = 0.5 * eta_p_Tr(problem.dimM,self.chi_0, pH_P.v_t) + self.bool_bcs_weak * eta_B2(self.chi_0, inputB_n1, problem.n_ver)
+        b_form_eq2 = 0.5 * eta_p_Tr(self.chi_0, pH_P.v_t) + self.bool_bcs_weak * eta_B2(self.chi_0, inputB_n1, problem.n_ver)
         b_form_eq3 = 0.0
         pH_P.time_march(b_form_eq1+b_form_eq2+b_form_eq3,dt,"gmres","amg")
         return pH_P.outputs(problem)
 
     def time_march_dual(self,dt,pH_D,problem,input_2,inputB_1,inputB_0):
         b_form_eq1 = (1 / dt) * m_i(self.chiT_n1, pH_D.v_t) + 0.5 * etaT_s(problem.dimM,self.chiT_n1, pH_D.v_t, input_2) \
-                     + 0.5 * etaT_p(problem.dimM,self.chiT_n1, pH_D.p_t) + 0.5 * etaT_k(problem.dimM,self.chiT_n1, pH_D.w_t, self.kappa) \
-                     + self.bool_bcs_weak * etaT_B1(problem.dimM,self.chiT_n1, inputB_0, problem.n_ver)
+                     + 0.5 * etaT_p(self.chiT_n1, pH_D.p_t) + 0.5 * etaT_k(problem.dimM,self.chiT_n1, pH_D.w_t, self.kappa) \
+                     + self.bool_bcs_weak * etaT_B1(self.chiT_n1, inputB_0, problem.n_ver)
         b_form_eq2 = 0.0
         b_form_eq3 = -0.5 * m_i(self.chiT_n2, pH_D.w_t) + 0.5 * etaT_k_Tr(problem.dimM,self.chiT_n2, pH_D.v_t) \
                      + self.bool_bcs_weak * etaT_B2(problem.dimM,self.chiT_n2, inputB_1, problem.n_ver)
@@ -374,13 +374,13 @@ def m_i(chi_i, alpha_i):
 
 def eta_s(dimM,chi_1, v_1, wT_n2):
     if dimM==3:
-        form =  -inner(chi_1,cross(wT_n2,v_1)) * dx
+        form = inner(chi_1,cross(v_1, wT_n2)) * dx
     elif dimM==2:
-        form = -dot(wT_n2, v_1[0]*chi_1[1] - v_1[1]*chi_1[0]) * dx
+        form = dot(wT_n2, v_1[1]*chi_1[0] - v_1[0]*chi_1[1]) * dx
     return form
 
 def eta_p(chi_1, p_0):
-    form =  -inner(chi_1,grad(p_0)) * dx
+    form = -inner(chi_1,grad(p_0)) * dx
     return form
 
 def eta_k(dimM,chi_1, w_2, kappa):
@@ -390,8 +390,8 @@ def eta_k(dimM,chi_1, w_2, kappa):
         form = -dot(curl2D(chi_1),kappa*w_2) * dx
     return form
 
-def eta_p_Tr(dimM,chi_0, v_1):
-    form = pow(-1,dimM-1)*inner(grad(chi_0),v_1) * dx
+def eta_p_Tr(chi_0, v_1):
+    form = -inner(grad(chi_0),v_1) * dx
     return form
 
 def eta_k_Tr(dimM,chi_2, v_1):
@@ -417,13 +417,13 @@ def eta_B2(chi_0, vT_n1, n_vec):
 
 def etaT_s(dimM,chi_2, vT_2, w_2):
     if dimM==3:
-        form =  -inner(chi_2,cross(w_2,vT_2)) *dx
+        form =  inner(chi_2,cross(vT_2,w_2)) *dx
     elif dimM==2:
-        form = -dot(w_2, vT_2[0]*chi_2[1] - vT_2[1]*chi_2[0]) * dx
+        form = dot(w_2, vT_2[1]*chi_2[0] - vT_2[0]*chi_2[1]) * dx
     return form
 
-def etaT_p(dimM,chi_2,pT_3):
-    form = pow(-1,dimM-1)*inner(div(chi_2),pT_3)* dx
+def etaT_p(chi_2,pT_3):
+    form = inner(div(chi_2),pT_3)* dx
     return form
 
 def etaT_k(dimM,chi_2,wT_1,kappa):
@@ -445,8 +445,8 @@ def etaT_k_Tr(dimM,chi_1, vT_2):
         form = dot(rot2D(chi_1), vT_2) * dx
     return form
 
-def etaT_B1(dimM,chi_2, p_0, n_vec):
-    form = pow(-1,dimM)*p_0*dot(chi_2,n_vec) * ds
+def etaT_B1(chi_2, p_0, n_vec):
+    form = -p_0*dot(chi_2,n_vec) * ds
     return form
 
 def etaT_B2(dimM,chi_1, v_1, n_vec):

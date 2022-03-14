@@ -117,8 +117,8 @@ if __name__ == '__main__':
     # 1. Select Problem:
 
     # Beltrami 3D problem
-    options = {"n_el":5,"n_t":100,"t_fin":.1}
-    beltrami = BeltramiProblem(options)
+    # options = {"n_el":5,"n_t":100,"t_fin":.1}
+    # beltrami = BeltramiProblem(options)
     #
     # # Channel 2D problem
     # options = {"n_el": 8, "n_t": 50, "t_fin": 1}
@@ -132,6 +132,9 @@ if __name__ == '__main__':
     # options = {"n_el": 1, "n_t": 10, "t_fin":.002}
     # taylorgreen = TaylorGreen(options)
     # 2. Select Solver:
+
+    # Taylor Green 2D
+    options = {"n_el": 20, "n_t": 0.25, "t_fin": 1}
 
     # options = {"pol_deg":2}
     # ipcs = IPCS_Solver(options)

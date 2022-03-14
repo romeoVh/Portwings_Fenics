@@ -28,8 +28,6 @@ class TaylorGreen2D(ProblemBase):
         from sympy import sin as Sin
         from sympy import cos as Cos
 
-
-
         # Mesh coordinates
         x, y, z = sym.symbols('x[0],x[1],x[2]')
         t = sym.symbols(time_str)
