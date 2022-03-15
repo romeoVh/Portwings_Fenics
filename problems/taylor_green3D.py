@@ -17,6 +17,8 @@ class TaylorGreen3D(ProblemBase):
         self.mu = 1.0 / 500
         # Set density
         self.rho = 1
+        # Reynolds number
+        self.Re = self.rho / self.mu
         # Periodic problem
         self.periodic = True
         # Solution is not exact

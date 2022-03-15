@@ -90,25 +90,25 @@ class DualFieldPHNSSolver(SolverBase):
 
         a_form_pr1 = (1 / dt) * m_i(chi_1, v_t1) - 0.5 * eta_s(problem.dimM, chi_1, v_t1, wT_tmid) \
                      - 0.5 * eta_p(chi_1, p_t1) - 0.5 * eta_k(problem.dimM, chi_1, w_t1, self.kappa)
-        a_form_pr2 = -0.5 * eta_p_Tr(problem.dimM, chi_0, v_t1)
+        a_form_pr2 = -0.5 * eta_p_Tr(chi_0, v_t1)
         a_form_pr3 = m_i(chi_2, w_t1) - eta_k_Tr(problem.dimM, chi_2, v_t1)
 
         b_form_pr1 = (1 / dt) * m_i(chi_1, v_t0) + 0.5 * eta_s(problem.dimM, chi_1, v_t0, wT_tmid) \
                      + 0.5 * eta_p(chi_1, p_t0) + 0.5 * eta_k(problem.dimM, chi_1, w_t0, self.kappa) \
                      + self.bool_bcs_weak * eta_B1(problem.dimM, chi_1, wT_tmid, problem.n_ver, self.kappa)
-        b_form_pr2 = 0.5 * eta_p_Tr(problem.dimM, chi_0, v_t0) + \
+        b_form_pr2 = 0.5 * eta_p_Tr(chi_0, v_t0) + \
                      self.bool_bcs_weak * eta_B2(chi_0, vT_tmid, problem.n_ver)
         b_form_pr3 = 0.0
 
         a_form_dual1 = (1 / dt) * m_i(chiT_n1, vT_t1) - 0.5 * etaT_s(problem.dimM, chiT_n1, vT_t1, w_tmid) \
-                     - 0.5 * etaT_p(problem.dimM, chiT_n1, pT_t1) - 0.5 * etaT_k(problem.dimM, chiT_n1,wT_t1, self.kappa)
+                     - 0.5 * etaT_p(chiT_n1, pT_t1) - 0.5 * etaT_k(problem.dimM, chiT_n1,wT_t1, self.kappa)
         a_form_dual2 = etaT_p_Tr(chiT_n, vT_t1)
         a_form_dual3 = 0.5 * m_i(chiT_n2, wT_t1) - 0.5 * etaT_k_Tr(problem.dimM, chiT_n2, vT_t1)
 
         b_form_dual1 = (1 / dt) * m_i(chiT_n1, vT_t0) + 0.5 * etaT_s(problem.dimM, chiT_n1,vT_t0,w_tmid) \
-                     + 0.5 * etaT_p(problem.dimM, chiT_n1, pT_t0) + 0.5 * etaT_k(problem.dimM, chiT_n1,
+                     + 0.5 * etaT_p(chiT_n1, pT_t0) + 0.5 * etaT_k(problem.dimM, chiT_n1,
                                                                                          wT_t0, self.kappa) \
-                     + self.bool_bcs_weak * etaT_B1(problem.dimM, chiT_n1, p_tmid, problem.n_ver)
+                     + self.bool_bcs_weak * etaT_B1(chiT_n1, p_tmid, problem.n_ver)
         b_form_dual2 = 0.0
         b_form_dual3 = -0.5 * m_i(chiT_n2, wT_t0) + 0.5 * etaT_k_Tr(problem.dimM, chiT_n2, vT_t0) \
                      + self.bool_bcs_weak * etaT_B2(problem.dimM, chiT_n2, v_tmid, problem.n_ver)
