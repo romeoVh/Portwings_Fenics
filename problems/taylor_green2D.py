@@ -4,6 +4,7 @@ import numpy as np
 from math import pi
 import sympy as sym
 
+
 class TaylorGreen2D(ProblemBase):
     "2D Taylor Green problem."
     def __init__(self, options):
@@ -37,7 +38,7 @@ class TaylorGreen2D(ProblemBase):
         v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.mu*t)
         v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.mu*t)
 
-        p = 0.25*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.mu*t)
+        p = (1/4)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.mu*t)
 
         w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.mu*t)
         return [v_1,v_2], w, p
@@ -93,14 +94,36 @@ class TaylorGreen2D(ProblemBase):
         Ch_ex_t = 0.0#assemble(exact_arr[5])
         return np.array([err_u,err_w,err_p,H_ex_t,E_ex_t,Ch_ex_t])
 
-    def boundary_conditions(self, V_v, V_w,V_p,t_c):
-        # Periodic boundary conditions are simply empty
-        bcu = []
-        bcw = []
-        bcp = []
+    def boundary_conditions(self):
 
-        return bcu,bcw, bcp
+        # Create periodic boundary condition
+        pbc = PeriodicBoundary()
+
+        return pbc
 
 
     def __str__(self):
         return "TaylorGreen2D"
+
+
+class PeriodicBoundary(SubDomain):
+
+    def inside(self, x, on_boundary):
+        # return True if on left or bottom boundary AND NOT on one of the two slave edges
+        return bool((near(x[0], 0) or near(x[1], 0)) and
+            (not ((near(x[0], 2) and near(x[1], 0)) or
+                  (near(x[0], 0) and near(x[1], 2)))) and on_boundary)
+
+    def map(self, x, y):
+        if near(x[0], 2) and near(x[1], 2):
+            y[0] = x[0] - 2
+            y[1] = x[1] - 2
+        elif near(x[0], 2):
+            y[0] = x[0] - 2
+            y[1] = x[1]
+        elif near(x[1], 2):
+            y[0] = x[0]
+            y[1] = x[1] - 2
+        else:
+            y[0] = -1000
+            y[1] = -1000

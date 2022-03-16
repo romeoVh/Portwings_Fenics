@@ -4,6 +4,39 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
+def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
+    v_n = x_n[0]
+    w_n = x_n[1]
+    p_n = x_n[2]
+
+    chi_1 = TestFunction(V_vel)
+    u_1 = TrialFunction(V_vel)
+
+    a_form_vel = (1 / dt_0) * m_form(chi_1, u_1)
+    A_vel = assemble(a_form_vel)
+
+    b_form_vel = (1 / dt_0) * m_form(chi_1, v_n) + wcross1_form(chi_1, v_n, w_n, problem.dimM) \
+                 + gradp_form(chi_1, p_n) + adj_curlw_form(chi_1, w_n, problem.dimM, problem.Re)
+    b_vel = assemble(b_form_vel)
+
+    v_sol = Function(V_vel)
+    solve(A_vel, v_sol.vector(), b_vel)
+
+    chi_w = TestFunction(V_vor)
+    w_trial = TrialFunction(V_vor)
+
+    a_form_vor = m_form(chi_w, w_trial)
+    A_vor = assemble(a_form_vor)
+
+    b_form_vor = curlu_form(chi_w, v_sol, problem.dimM)
+    b_vor = assemble(b_form_vor)
+
+    w_sol = Function(V_vor)
+
+    solve(A_vor, w_sol.vector(), b_vor)
+
+    return v_sol, w_sol
+
 def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Implementation of the dual field formulation for periodic navier stokes
     mesh = problem.mesh
@@ -30,16 +63,27 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     P_dual = MixedElement([PT_n1, PT_n2, PT_n])
 
-    # Define primal function spaces
-    V_1 = FunctionSpace(mesh, P_1)
-    V_2 = FunctionSpace(mesh, P_2)
-    V_0 = FunctionSpace(mesh, P_0)
-    V_primal = FunctionSpace(mesh, P_primal)  # V_1 x V_2 x V_0
-    # Dual function spaces
-    VT_n1 = FunctionSpace(mesh, PT_n1)
-    VT_n2 = FunctionSpace(mesh, PT_n2)
-    VT_n = FunctionSpace(mesh, PT_n)
-    V_dual = FunctionSpace(mesh, P_dual)  # VT_n-1 x VT_n-2 x VT_n
+    # Define primal function spaces for periodic bcs
+    if problem.periodic==True:
+        V_1 = FunctionSpace(mesh, P_1, constrained_domain=problem.boundary_conditions())
+        V_2 = FunctionSpace(mesh, P_2, constrained_domain=problem.boundary_conditions())
+        V_0 = FunctionSpace(mesh, P_0, constrained_domain=problem.boundary_conditions())
+        V_primal = FunctionSpace(mesh, P_primal, constrained_domain=problem.boundary_conditions())  # V_1 x V_2 x V_0
+        # Dual function spaces
+        VT_n1 = FunctionSpace(mesh, PT_n1, constrained_domain=problem.boundary_conditions())
+        VT_n2 = FunctionSpace(mesh, PT_n2, constrained_domain=problem.boundary_conditions())
+        VT_n = FunctionSpace(mesh, PT_n, constrained_domain=problem.boundary_conditions())
+        V_dual = FunctionSpace(mesh, P_dual, constrained_domain=problem.boundary_conditions())  # VT_n-1 x VT_n-2 x VT_n
+    else:
+        V_1 = FunctionSpace(mesh, P_1)
+        V_2 = FunctionSpace(mesh, P_2)
+        V_0 = FunctionSpace(mesh, P_0)
+        V_primal = FunctionSpace(mesh, P_primal)  # V_1 x V_2 x V_0
+        # Dual function spaces
+        VT_n1 = FunctionSpace(mesh, PT_n1)
+        VT_n2 = FunctionSpace(mesh, PT_n2)
+        VT_n = FunctionSpace(mesh, PT_n)
+        V_dual = FunctionSpace(mesh, P_dual)  # VT_n-1 x VT_n-2 x VT_n
     print("Function Space dimensions, Primal - Dual: ", [V_primal.dim(), V_dual.dim()])
 
     # Define Function assigners
@@ -54,30 +98,25 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     dt = Constant(t_fin / n_t)
     tvec_int = np.linspace(0, n_t * float(dt), 1 + n_t)
-    tvec_stag = np.zeros((n_t+2, ))
-    tvec_stag[1:] = np.linspace(float(dt)/2, float(dt)*(n_t + 1/2), n_t+1)
+    tvec_stag = np.linspace(float(dt)/2, float(dt)*(n_t + 1/2), n_t+1)
 
     u_pr_0, w_pr_0, p_pr_0 = xprimal_0.split(deepcopy=True)
     x_0 = [u_pr_0, w_pr_0, p_pr_0]
-    v_pr_half, w_pr_half = explicit_step_primal(dt / 2, problem, x_0, V_1, V_2)
+    u_pr_half, w_pr_half = explicit_step_primal(dt / 2, problem, x_0, V_1, V_2)
 
     print("Explicit step solved")
 
-    # plt.figure()
-    # plot(w_0)
-    # plt.figure()
-    # plot(w_half)
-    # plt.show()
+    u_pr_12 = interpolate(u_pr_half, V_1)
+    w_pr_12 = interpolate(w_pr_half, V_2)
+    p_pr_init = interpolate(p_pr_0, V_0)
 
     # Primal intermediate variables
     xprimal_n12 = Function(V_primal, name="u, w at n+1/2, p at n")
-    xprimal_n12.sub(0).assign(v_pr_half)
-    xprimal_n12.sub(1).assign(w_pr_half)
-    xprimal_n12.sub(2).assign(p_pr_0)
+    fa_primal.assign(xprimal_n12, [u_pr_12, w_pr_12, p_pr_init])
 
     xprimal_n32 = Function(V_primal, name="u, w at n+3/2, p at n+1")
 
-    xprimal_n1 = Function(V_primal, name="u, w at n+1, p at n+1/2")
+    # xprimal_n1 = Function(V_primal, name="u, w at n+1, p at n+1/2")
 
 
     # Dual intermediate variables
@@ -89,8 +128,8 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Kinetic energy definition
     # Primal
     H_pr_vec = np.zeros((n_t + 1))
-    H_pr_0 = 0.5*dot(u_pr_0, u_pr_0) * dx
-    H_pr_vec[0] = assemble(H_pr_0)
+    H_pr_12 = 0.5*dot(u_pr_12, u_pr_12) * dx
+    H_pr_vec[0] = assemble(H_pr_12)
 
     # Dual
     u_dl_0, w_dl_0, p_dl_0 = xdual_0.split(deepcopy=True)
@@ -99,43 +138,27 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     H_dl_vec[0] = assemble(H_dl_0)
 
     # Compute vorticity at a given point to check correctness of the solver
-    point_P = (1/3, 5/7)
-    # Primal
     w_pr_P_vec = np.zeros((n_t + 1))
-    w_pr_P_vec[0] = w_pr_0(point_P)
-
-    # Dual
     w_dl_P_vec = np.zeros((n_t + 1))
-    w_dl_P_vec[0] = w_dl_0(point_P)
+    if problem.dimM == 2:
+        point_P = (1/3, 5/7)
+        # Primal
+        w_pr_P_vec[0] = w_pr_12(point_P)
+        # Dual
+        w_dl_P_vec[0] = w_dl_0(point_P)
+    else:
+        point_P = (1 / 3, 5 / 7, 3/7)
+
 
     # Exact quantities
-    # Energy
+    # Energy and Vorticity at P
     H_ex_vec = np.zeros((n_t + 1))
-    u_ex_0, w_ex_0, p_ex_0, H_ex_0, E_ex_0, Ch_ex_0 = problem.init_outputs(0)
-    H_ex_vec[0] = assemble(H_ex_0)
-
-    # Vorticity at P
     w_ex_P_vec = np.zeros((n_t + 1))
-    w_ex_P_vec[0] = w_ex_0(point_P)
 
-    # # Print variables to check
-    # print("Primal w at P")
-    # print(w_pr_P_vec[0])
-    #
-    # print("Dual w at P")
-    # print(w_dl_P_vec[0])
-    #
-    # print("Exact w at P")
-    # print(w_ex_P_vec[0])
-    #
-    # print("Primal H at 0")
-    # print(H_pr_vec[0])
-    #
-    # print("Dual H at 0")
-    # print(H_dl_vec[0])
-    #
-    # print("Exact H at 0")
-    # print(H_ex_vec[0])
+    if problem.exact == True:
+        u_ex_0, w_ex_0, p_ex_0, H_ex_0, E_ex_0, Ch_ex_0 = problem.init_outputs(0)
+        H_ex_vec[0] = assemble(H_ex_0)
+        w_ex_P_vec[0] = w_ex_0(point_P)
 
     # Primal Test and trial functions definition
     chi_primal = TestFunction(V_primal)
@@ -150,7 +173,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     a2_primal_static = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
     a3_primal_static = - adj_divu_form(chi_p_pr, u_pr)
 
-    A_primal_static = assemble(a1_primal_static+a2_primal_static+a3_primal_static)
+    A_primal_static = assemble(a1_primal_static + a2_primal_static + a3_primal_static)
 
     # Primal Test and trial functions definition
     chi_dual = TestFunction(V_dual)
@@ -160,7 +183,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_dl, w_dl, p_dl = split(x_dual)
 
     # Static part of the dual A operator
-    a1_dual_static = (1 / dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl) \
+    a1_dual_static = (1/dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl) \
                        - 0.5 * curlw_form(chi_u_dl, w_dl, problem.dimM, problem.Re)
     a2_dual_static = m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
     a3_dual_static = - divu_form(chi_p_dl, u_dl)
@@ -173,53 +196,60 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
         # Solve dual system for n+1
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
-        a_dual_dynamic = - wcross2_form(chi_u_dl, u_dl, w_pr_n12, problem.dimM)
-
+        a_dual_dynamic = - 0.5*wcross2_form(chi_u_dl, u_dl, w_pr_n12, problem.dimM)
         A_dual_dynamic = assemble(a_dual_dynamic)
 
         A_dual = A_dual_static + A_dual_dynamic
 
-        u_dl_n, w_dl_n, p_dl_n = xdual_n.split(deepcopy=True)
-        b1_dual = wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM) + curlw_form(chi_u_dl, w_dl_n, problem.dimM, \
-                                                                                      problem.Re)
+        u_dl_n, w_dl_n, p_dl_12n = xdual_n.split(deepcopy=True)
+
+        b1_dual = (1/dt) * m_form(chi_u_dl, u_dl_n) + 0.5*wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM) \
+                  + 0.5*curlw_form(chi_u_dl, w_dl_n, problem.dimM, problem.Re)
         bvec_dual = assemble(b1_dual)
         solve(A_dual, xdual_n1.vector(), bvec_dual, "gmres", "amg")
 
-        u_dl_n1, w_dl_n1, p_dl_n1 = xdual_n1.split(deepcopy=True)
+        u_dl_n1, w_dl_n1, p_dl_n12 = xdual_n1.split(deepcopy=True)
         H_dl_n1 = 0.5 * dot(u_dl_n1, u_dl_n1) * dx
         H_dl_vec[ii] = assemble(H_dl_n1)
-        w_dl_P_vec[ii] = w_dl_n1(point_P)
 
-        print(H_dl_vec[ii])
         # Solve primal system at n_32
-        a_primal_dynamic = - wcross1_form(chi_u_pr, u_pr, w_dl_n1, problem.dimM)
+        a_primal_dynamic = - 0.5*wcross1_form(chi_u_pr, u_pr, w_dl_n1, problem.dimM)
         A_primal_dynamic = assemble(a_primal_dynamic)
 
         A_primal = A_primal_static + A_primal_dynamic
 
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
-        b1_primal = wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM) + adj_curlw_form(chi_u_pr, w_pr_n12, \
-                                                                                             problem.dimM, problem.Re)
+        b1_primal = (1/dt) * m_form(chi_u_pr, u_pr_n12) + 0.5*wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM) \
+                    + 0.5*adj_curlw_form(chi_u_pr, w_pr_n12, problem.dimM, problem.Re)
         bvec_primal = assemble(b1_primal)
         solve(A_primal, xprimal_n32.vector(), bvec_primal, "gmres", "amg")
 
-        xprimal_n1.assign(0.5*(xprimal_n12 + xprimal_n32))
-        u_pr_n1, w_pr_n1, p_pr_n1 = xprimal_n1.split(deepcopy=True)
-        H_pr_n1 = 0.5 * dot(u_pr_n1, u_pr_n1) * dx
-        H_pr_vec[ii] = assemble(H_pr_n1)
-        w_pr_P_vec[ii] = w_pr_n1(point_P)
+        # xprimal_n1.assign(0.5*(xprimal_n12 + xprimal_n32))
+        # u_pr_n1, w_pr_n1, p_pr_n1 = xprimal_n1.split(deepcopy=True)
+        # H_pr_n1 = 0.5 * dot(u_pr_n1, u_pr_n1) * dx
 
-        # Reassign dual, primal, exact
+        u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
+        H_pr_n32 = 0.5 * dot(u_pr_n32, u_pr_n32) * dx
+        H_pr_vec[ii] = assemble(H_pr_n32)
+
         xdual_n.assign(xdual_n1)
         xprimal_n12.assign(xprimal_n32)
 
-        # Compute exact energy and vorticity
-        t_act = ii * dt
-        u_ex_t, w_ex_t, p_ex_t, H_ex_t, E_ex_t, Ch_ex_t = problem.init_outputs(t_act)
-        H_ex_vec[ii] = assemble(H_ex_t)
-        w_ex_P_vec[ii] = w_ex_t(point_P)
+        if problem.dimM==2:
+            w_dl_P_vec[ii] = w_dl_n1(point_P)
+            w_pr_P_vec[ii] = w_pr_n32(point_P)
 
-    return tvec_int, H_pr_vec, H_dl_vec, H_ex_vec, w_pr_P_vec, w_dl_P_vec, w_ex_P_vec
+        # Reassign dual, primal, exact
+
+    # Compute exact energy and vorticity
+    if problem.exact == True:
+        for ii in tqdm(range(1, n_t + 1)):
+            t_act = ii * dt
+            u_ex_t, w_ex_t, p_ex_t, H_ex_t, E_ex_t, Ch_ex_t = problem.init_outputs(t_act)
+            H_ex_vec[ii] = assemble(H_ex_t)
+            w_ex_P_vec[ii] = w_ex_t(point_P)
+
+    return tvec_int, tvec_stag,  H_pr_vec, H_dl_vec, H_ex_vec, w_pr_P_vec, w_dl_P_vec, w_ex_P_vec
 
 # Common forms
 def m_form(chi_i, alpha_i):
@@ -246,12 +276,11 @@ def gradp_form(chi_1, p_0):
     return form
 
 def adj_curlw_form(chi_1, w_2, dimM, Re):
-    # if dimM==3:
-    #     form = -1./Re*inner(curl(chi_1),w_2) * dx
-    # elif dimM==2:
-    #     form = -1./Re*dot(curl2D(chi_1),w_2) * dx
-    # return form
-    return 0
+    if dimM==3:
+        form = -1./Re*inner(curl(chi_1),w_2) * dx
+    elif dimM==2:
+        form = -1./Re*dot(curl2D(chi_1),w_2) * dx
+    return form
 
 def adj_divu_form(chi_0, v_1):
     form = inner(grad(chi_0),v_1) * dx
@@ -288,14 +317,12 @@ def adj_gradp_form(chi_2,pT_3):
     return form
 
 def curlw_form(chi_2,wT_1,dimM, Re):
-    # if dimM == 3:
-    #     form = -1./Re*inner(chi_2, curl(wT_1)) * dx
-    # elif dimM == 2:
-    #     form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
-    #     # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
-    # return form
-    return 0
-
+    if dimM == 3:
+        form = -1./Re*inner(chi_2, curl(wT_1)) * dx
+    elif dimM == 2:
+        form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
+        # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
+    return form
 
 def divu_form(chi_3, vT_2):
     form = -inner(chi_3, div(vT_2)) * dx
@@ -319,36 +346,3 @@ def tantrace_v_form(chi_1, v_1, n_vec, dimM):
         form = chi_1*dot(as_vector((v_1[1], -v_1[0])), n_vec) * ds
     return form
 
-# Explicit Euler for first time step
-def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
-    v_n = x_n[0]
-    w_n = x_n[1]
-    p_n = x_n[2]
-
-    chi_1 = TestFunction(V_vel)
-    u_1 = TrialFunction(V_vel)
-
-    a_form_vel = 1 / dt_0 * m_form(chi_1, u_1)
-    A_vel = assemble(a_form_vel)
-
-    b_form_vel = (1 / dt_0) * m_form(chi_1, v_n) + wcross1_form(chi_1, v_n, w_n, problem.dimM) \
-                 + gradp_form(chi_1, p_n) + adj_curlw_form(chi_1, w_n, problem.dimM, problem.Re)
-    b_vel = assemble(b_form_vel)
-
-    v_sol = Function(V_vel)
-    solve(A_vel, v_sol.vector(), b_vel)
-
-    chi_w = TestFunction(V_vor)
-    w_trial = TrialFunction(V_vor)
-
-    a_form_vor = m_form(chi_w, w_trial)
-    A_vor = assemble(a_form_vor)
-
-    b_form_vor = curlu_form(chi_w, v_sol, problem.dimM)
-    b_vor = assemble(b_form_vor)
-
-    w_sol = Function(V_vor)
-
-    solve(A_vor, w_sol.vector(), b_vor)
-
-    return v_sol, w_sol

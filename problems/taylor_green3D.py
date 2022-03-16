@@ -39,14 +39,57 @@ class TaylorGreen3D(ProblemBase):
         p_init = interpolate(p_ex_0, V_p)
         return [v_init, w_init, p_init]
 
-    def boundary_conditions(self, V_v, V_w,V_p,t_c):
+    def boundary_conditions(self):
         # Periodic boundary conditions are simply empty
-        bcu = []
-        bcw = []
-        bcp = []
+        pbc = PeriodicBoundary()
 
-        return bcu,bcw, bcp
-
+        return pbc
 
     def __str__(self):
         return "TaylorGreen3D"
+
+class PeriodicBoundary(SubDomain):
+
+    # Left boundary is "target domain" G
+    def inside(self, x, on_boundary):
+        # return True if on left or bottom boundary AND NOT on one of the two slave edges
+        return bool ((near(x[0], -pi) or near(x[1], -pi) or near(x[2], -pi)) and
+            (not ((near(x[0], pi) and near(x[2], pi)) or
+                  (near(x[0], pi) and near(x[1], pi)) or
+                  (near(x[1], pi) and near(x[2], pi)))) and on_boundary)
+
+    # Map right boundary (H) to left boundary (G)
+    def map(self, x, y):
+    	#### define mapping for a single point in the box, such that 3 mappings are required
+        if near(x[0], pi) and near(x[1], pi) and near(x[2], pi):
+            y[0] = x[0] - 2*pi
+            y[1] = x[1] - 2*pi
+            y[2] = x[2] - 2*pi
+        ##### define mapping for edges in the box, such that mapping in 2 Cartesian coordinates are required
+        if near(x[0], pi) and near(x[2], pi):
+            y[0] = x[0] - 2*pi
+            y[1] = x[1]
+            y[2] = x[2] - 2*pi
+        elif near(x[1], pi) and near(x[2], pi):
+            y[0] = x[0]
+            y[1] = x[1] - 2*pi
+            y[2] = x[2] - 2*pi
+        elif near(x[0], pi) and near(x[1], pi):
+            y[0] = x[0] - 2*pi
+            y[1] = x[1] - 2*pi
+            y[2] = x[2]
+        #### right maps to left: left/right is defined as the x-direction
+        elif near(x[0], pi):
+            y[0] = x[0] - 2*pi
+            y[1] = x[1]
+            y[2] = x[2]
+        ### back maps to front: front/back is defined as the y-direction
+        elif near(x[1], pi):
+            y[0] = x[0]
+            y[1] = x[1] - 2*pi
+            y[2] = x[2]
+        #### top maps to bottom: top/bottom is defined as the z-direction
+        elif near(x[2], pi):
+            y[0] = x[0]
+            y[1] = x[1]
+            y[2] = x[2] - 2*pi
