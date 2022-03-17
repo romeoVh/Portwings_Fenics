@@ -22,6 +22,10 @@ class BeltramiProblem(ProblemBase):
         self.mu = 1.0
         # Set density
         self.rho = 1.0
+        # Not periodic
+        self.periodic = False
+        # Exact solution
+        self.exact = True
 
     def exact_solution(self, time_str='t'):
         from sympy import exp as Exp
@@ -81,8 +85,8 @@ class BeltramiProblem(ProblemBase):
         # bcp.append(DirichletBC(V_p, p_ex_t_1, boundary_p_in))
 
         # Option 3: All cubes have w_in
-        if V_w is not None:
-            bcw.append(DirichletBC(V_w, w_ex_t_1, DomainBoundary()))
+        # if V_w is not None:
+        #     bcw.append(DirichletBC(V_w, w_ex_t_1, DomainBoundary()))
 
         return bcu,bcw, bcp
 

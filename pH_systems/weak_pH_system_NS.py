@@ -48,7 +48,7 @@ class WeakPortHamiltonianSystemNS:
         # Energy, Enstrophy and Helicity of System and divergence of velocity vector field
         self.H_t = 0.5 * inner(self.v_t, self.v_t) * dx
         self.E_t = 0.5 * inner(self.w_t, self.w_t) * dx
-        self.Ch_t = dot(self.v_t, self.w_t)  * dx
+        self.Ch_t = 0 # dot(self.v_t, self.w_t)  * dx
         self.div_v_t = (div(self.v_t)) ** 2 * dx
         return 4
 
@@ -75,7 +75,7 @@ class WeakPortHamiltonianSystemNS:
         div_v = assemble(self.div_v_t)
         H_t = assemble(self.H_t)
         E_t = assemble(self.E_t)
-        Ch_t = assemble(self.Ch_t)
+        Ch_t = 0 #assemble(self.Ch_t)
 
         return np.append(prob_out,np.array([H_t,E_t,Ch_t,div_v]))
 
