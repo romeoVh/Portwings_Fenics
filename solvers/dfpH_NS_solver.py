@@ -167,6 +167,8 @@ class DualFieldPHNSSolver(SolverBase):
 
         self.start_timing()
 
+        # Full non linear solver
+
         # ------------------------------------------
         # Initial time advancement from t_0 to t_1
         # ------------------------------------------
@@ -176,11 +178,10 @@ class DualFieldPHNSSolver(SolverBase):
         vT_ex_tmid, wT_ex_tmid, pT_ex_tmid = problem.get_exact_sol_at_t(self.pH_primal.t_mid)
 
         # 2. Advance primal system
-        input_n2 = interpolate(wT_ex_tmid,VT_n2)
+        input_n2 = interpolate(wT_ex_tmid, VT_n2)
         input_n1 = interpolate(vT_ex_tmid, VT_n1)
         self.assemble_lhs_primal(dt, self.pH_primal, problem, input_n2)
-        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal, problem, input_n2, input_n2,
-                                                                   input_n1)
+        self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal,problem,input_n2,input_n2,input_n1)
         print("Second output for primal system: ", self.outputs_arr_primal[self._ts])
         # 3. Average states of primal system at t_0 and t_1 to calculate t_1/2
         v_tmid, w_tmid, p_tmid = x_init.split(deepcopy=True)
@@ -217,7 +218,8 @@ class DualFieldPHNSSolver(SolverBase):
         # Time loop from t_1 onwards
         for t in tqdm(t_range[2:]):
             # Question: Do we need to always reassemble the LHS ??
-
+            # It seems like the first iteration of the loop
+            # Goes from 0 to 1. So why it start from t=2?
             # Advance primal system from t_k --> t_k+1
             self.assemble_lhs_primal(dt, self.pH_primal, problem, self.pH_dual.w_t)
             # Get weak boundary inputs
@@ -229,7 +231,8 @@ class DualFieldPHNSSolver(SolverBase):
                 input_n1 = interpolate(vT_ex_tmid, VT_n1)
                 # Should be changed to get them from problem if False
 
-            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal, problem, self.pH_dual.w_t, input_n2,input_n1)
+            self.outputs_arr_primal[self._ts] = self.time_march_primal(dt, self.pH_primal, problem, \
+                                                                       self.pH_dual.w_t, input_n2,input_n1)
 
             # Advance dual system from t_kT --> t_kT+1
             self.assemble_lhs_dual(dt, self.pH_dual, problem, self.pH_primal.w_t)
@@ -248,6 +251,13 @@ class DualFieldPHNSSolver(SolverBase):
             self.update(problem, dt)
 
 # Generic mass form --> m(.)
+
+def initial_implicit_step():
+
+    # Compute the overall solution for both
+    # Update the midpoint value of the primal system using the midpoint rule
+    return None
+
 
 def m_i(chi_i, alpha_i):
     form =  inner(chi_i,alpha_i) * dx

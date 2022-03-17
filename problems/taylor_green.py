@@ -21,20 +21,18 @@ class TaylorGreen(ProblemBase):
         self.rho = 1
 
     def initial_conditions(self, V_v, V_w, V_p):
-
         v_0 = ("sin(x[0])*cos(x[1])*cos(x[2])", "-cos(x[0])*sin(x[1])*cos(x[2])", "0")
         v_ex_0 = Expression(v_0, degree=2)
         v_init = interpolate(v_ex_0, V_v)
 
         w_0 = ("-cos(x[0])*sin(x[1])*sin(x[2])", "-sin(x[0])*cos(x[1])*sin(x[2])", "2*sin(x[0])*sin(x[1])*cos(x[2])")
         w_ex_0 = Expression(w_0, degree=2)
-
         w_init = interpolate(w_ex_0, V_w)
-
 
         p_0 = "1/16*(cos(2*x[0]) + cos(2*x[1]))*(cos(2*x[2]) + 2)"
         p_ex_0 = Expression(p_0, degree=2)
         p_init = interpolate(p_ex_0, V_p)
+
         return [v_init, w_init, p_init]
 
     def boundary_conditions(self, V_v, V_w,V_p,t_c):
