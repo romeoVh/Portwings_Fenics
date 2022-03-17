@@ -10,11 +10,11 @@ d = 2 # int(input("Spatial dimension ? "))
 if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
-    deg = 1
-    n_t = 100
-    Delta_t = 1/20
+    deg = 3
+    n_t = 10
+    Delta_t = 1/100
     t_f = n_t * Delta_t
-    options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
+    options = {"n_el": 3, "t_fin": t_f, "n_t": n_t}
     # if d == 2:
     #     taylorgreen = TaylorGreen2D(options)
     # else:
@@ -24,9 +24,6 @@ if __name__ == '__main__':
     tvec_int, tvec_stag, H_pr, H_dl, H_ex, wP_pr, wP_dl, wP_ex = compute_sol(cons_prop, deg, n_t, t_f)
     plt.figure()
     plt.plot(tvec_stag, H_pr, 'b', label="H primal")
-    plt.legend()
-
-    plt.figure()
     plt.plot(tvec_int, H_dl, 'r', label="H dual")
     # plt.plot(tvec_int, H_ex, 'g', label="H exact")
     plt.legend()

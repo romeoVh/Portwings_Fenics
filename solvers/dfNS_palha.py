@@ -7,7 +7,7 @@ from vedo.dolfin import plot
 
 
 def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
-    v_n = x_n[0]
+    u_n = x_n[0]
     w_n = x_n[1]
     p_n = x_n[2]
 
@@ -17,26 +17,28 @@ def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
     a_form_vel = (1 / dt_0) * m_form(chi_1, u_1)
     A_vel = assemble(a_form_vel)
 
-    b_form_vel = (1 / dt_0) * m_form(chi_1, v_n) + wcross1_form(chi_1, v_n, w_n, problem.dimM) \
-                 + gradp_form(chi_1, p_n) + adj_curlw_form(chi_1, w_n, problem.dimM, problem.Re)
+    ptot_n = p_n + 0.5*dot(u_n, u_n)
+
+    b_form_vel = (1 / dt_0) * m_form(chi_1, u_n) + wcross1_form(chi_1, u_n, w_n, problem.dimM) \
+                 + gradp_form(chi_1, ptot_n) + adj_curlw_form(chi_1, w_n, problem.dimM, problem.Re)
     b_vel = assemble(b_form_vel)
 
-    v_sol = Function(V_vel)
-    solve(A_vel, v_sol.vector(), b_vel)
+    u_sol = Function(V_vel)
+    solve(A_vel, u_sol.vector(), b_vel)
 
     chi_w = TestFunction(V_vor)
     w_trial = TrialFunction(V_vor)
 
     M_vor = assemble(m_form(chi_w, w_trial))
 
-    b_form_vor = curlu_form(chi_w, v_sol, problem.dimM)
+    b_form_vor = curlu_form(chi_w, u_sol, problem.dimM)
     b_vor = assemble(b_form_vor)
 
     w_sol = Function(V_vor)
 
     solve(M_vor, w_sol.vector(), b_vor)
 
-    return v_sol, w_sol
+    return u_sol, w_sol
 
 def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Implementation of the dual field formulation for periodic navier stokes
