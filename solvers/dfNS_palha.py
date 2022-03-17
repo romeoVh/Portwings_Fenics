@@ -3,6 +3,8 @@ from time import time
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+from vedo.dolfin import plot
+
 
 def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
     v_n = x_n[0]
@@ -25,15 +27,14 @@ def explicit_step_primal(dt_0, problem, x_n, V_vel, V_vor):
     chi_w = TestFunction(V_vor)
     w_trial = TrialFunction(V_vor)
 
-    a_form_vor = m_form(chi_w, w_trial)
-    A_vor = assemble(a_form_vor)
+    M_vor = assemble(m_form(chi_w, w_trial))
 
     b_form_vor = curlu_form(chi_w, v_sol, problem.dimM)
     b_vor = assemble(b_form_vor)
 
     w_sol = Function(V_vor)
 
-    solve(A_vor, w_sol.vector(), b_vor)
+    solve(M_vor, w_sol.vector(), b_vor)
 
     return v_sol, w_sol
 
@@ -65,6 +66,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     # Define primal function spaces for periodic bcs
     if problem.periodic==True:
+        print("Periodic domain")
         V_1 = FunctionSpace(mesh, P_1, constrained_domain=problem.boundary_conditions())
         V_2 = FunctionSpace(mesh, P_2, constrained_domain=problem.boundary_conditions())
         V_0 = FunctionSpace(mesh, P_0, constrained_domain=problem.boundary_conditions())
@@ -112,6 +114,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     # Primal intermediate variables
     xprimal_n12 = Function(V_primal, name="u, w at n+1/2, p at n")
+    # fa_primal.assign(xprimal_n12, [u_pr_12, w_pr_12, p_pr_init])
     fa_primal.assign(xprimal_n12, [u_pr_12, w_pr_12, p_pr_init])
 
     xprimal_n32 = Function(V_primal, name="u, w at n+3/2, p at n+1")
@@ -190,15 +193,15 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     A_dual_static = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
 
+    # A_primal = assemble(a1_primal_static + a2_primal_static + a3_primal_static)
+    # A_dual = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
     # Time loop from 1 onwards
     for ii in tqdm(range(1, n_t+1)):
-        print(ii)
 
         # Solve dual system for n+1
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
         a_dual_dynamic = - 0.5*wcross2_form(chi_u_dl, u_dl, w_pr_n12, problem.dimM)
         A_dual_dynamic = assemble(a_dual_dynamic)
-
         A_dual = A_dual_static + A_dual_dynamic
 
         u_dl_n, w_dl_n, p_dl_12n = xdual_n.split(deepcopy=True)
@@ -215,7 +218,6 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         # Solve primal system at n_32
         a_primal_dynamic = - 0.5*wcross1_form(chi_u_pr, u_pr, w_dl_n1, problem.dimM)
         A_primal_dynamic = assemble(a_primal_dynamic)
-
         A_primal = A_primal_static + A_primal_dynamic
 
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
@@ -271,16 +273,18 @@ def wcross1_form(chi_1, v_1, wT_n2, dimM):
         form = dot(wT_n2, v_1[1]*chi_1[0] - v_1[0]*chi_1[1]) * dx
     return form
 
+
 def gradp_form(chi_1, p_0):
     form = -inner(chi_1,grad(p_0)) * dx
     return form
 
 def adj_curlw_form(chi_1, w_2, dimM, Re):
-    if dimM==3:
-        form = -1./Re*inner(curl(chi_1),w_2) * dx
-    elif dimM==2:
-        form = -1./Re*dot(curl2D(chi_1),w_2) * dx
-    return form
+    # if dimM==3:
+    #     form = -1./Re*inner(curl(chi_1),w_2) * dx
+    # elif dimM==2:
+    #     form = -1./Re*dot(curl2D(chi_1),w_2) * dx
+    # return form
+    return 0
 
 def adj_divu_form(chi_0, v_1):
     form = inner(grad(chi_0),v_1) * dx
@@ -317,12 +321,13 @@ def adj_gradp_form(chi_2,pT_3):
     return form
 
 def curlw_form(chi_2,wT_1,dimM, Re):
-    if dimM == 3:
-        form = -1./Re*inner(chi_2, curl(wT_1)) * dx
-    elif dimM == 2:
-        form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
-        # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
-    return form
+    # if dimM == 3:
+    #     form = -1./Re*inner(chi_2, curl(wT_1)) * dx
+    # elif dimM == 2:
+    #     form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
+    #     # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
+    # return form
+    return 0
 
 def divu_form(chi_3, vT_2):
     form = -inner(chi_3, div(vT_2)) * dx

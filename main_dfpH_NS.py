@@ -103,10 +103,10 @@ def post_processing_pH_NS_taylorgreen(outputs_arr, taylorgreen, stagger_time=Fal
     V = 8*pi**3
     plt.figure()
     plt.subplot(1, 3, 1)
-    plt.plot(t_range, outputs_arr[:, 0]/V)
+    plt.plot(t_range, outputs_arr[:, 0])
     plt.title("Energy")
     plt.subplot(1, 3, 2)
-    plt.plot(t_range, outputs_arr[:, 1]/V)
+    plt.plot(t_range, outputs_arr[:, 1])
     plt.title('Enstrophy')
     plt.subplot(1, 3, 3)
     plt.plot(t_range, outputs_arr[:, 2])
