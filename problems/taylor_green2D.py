@@ -10,7 +10,7 @@ class TaylorGreen2D(ProblemBase):
     def __init__(self, options):
         ProblemBase.__init__(self, options)
 
-        self.mesh = RectangleMesh(Point(0, 0), Point(2, 2), self.n_el, self.n_el)
+        self.mesh = RectangleMesh(Point(0, 0), Point(2, 2), self.n_el, self.n_el, "crossed")
         self.init_mesh()
         self.structured_time_grid()
 
@@ -18,6 +18,8 @@ class TaylorGreen2D(ProblemBase):
         self.mu = 1.0 / 100
         # Set density
         self.rho = 1
+        # Set kinematic viscosity
+        self.nu = self.mu/self.rho
         # Reynolds number
         self.Re = self.rho/self.mu
         # Periodic Problem
@@ -32,15 +34,15 @@ class TaylorGreen2D(ProblemBase):
         from sympy import cos as Cos
 
         # Mesh coordinates
-        x, y, z = sym.symbols('x[0],x[1],x[2]')
+        x, y = sym.symbols('x[0],x[1]')
         t = sym.symbols(time_str)
 
-        v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.mu*t)
-        v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.mu*t)
+        v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
 
-        p = (1/4)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.mu*t)
+        p = (1/4)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
 
-        w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.mu*t)
+        w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         return [v_1,v_2], w, p
 
     def get_exact_sol_at_t(self, t_i):
@@ -115,9 +117,11 @@ class PeriodicBoundary(SubDomain):
                   (near(x[0], 0) and near(x[1], 2)))) and on_boundary)
 
     def map(self, x, y):
+        #### define mapping for a single point in the rectangle, such that 2 mappings are required
         if near(x[0], 2) and near(x[1], 2):
             y[0] = x[0] - 2
             y[1] = x[1] - 2
+        #### define mapping for edges in the rectangle, such that 1 mappings is required
         elif near(x[0], 2):
             y[0] = x[0] - 2
             y[1] = x[1]

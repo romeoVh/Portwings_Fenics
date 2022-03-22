@@ -5,40 +5,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from vedo.dolfin import plot
 
-
-def explicit_step_primal(dt_0, problem, x_n, wT_n, V_vel, V_vor):
+def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
     u_n = x_n[0]
     w_n = x_n[1]
-    p_n = x_n[2]
 
-    chi_1 = TestFunction(V_vel)
-    u_1 = TrialFunction(V_vel)
+    chi_pr = TestFunction(V_pr)
+    chi_u_pr, chi_w_pr, chi_p_pr = split(chi_pr)
 
-    a_form_vel = (1 / dt_0) * m_form(chi_1, u_1)
-    A_vel = assemble(a_form_vel)
+    x_pr = TrialFunction(V_pr)
+    u_pr, w_pr, p_pr = split(x_pr)
 
-    ptot_n = p_n + 0.5*dot(u_n, u_n)
+    a1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr)
+    a2_form_vor = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
+    a3_form_p = - adj_divu_form(chi_p_pr, u_pr)
+    A0_pr = assemble(a1_form_vel + a2_form_vor + a3_form_p)
 
-    b_form_vel = (1 / dt_0) * m_form(chi_1, u_n) + wcross1_form(chi_1, u_n, wT_n, problem.dimM) \
-                 + gradp_form(chi_1, ptot_n) + adj_curlw_form(chi_1, w_n, problem.dimM, problem.Re)
-    b_vel = assemble(b_form_vel)
+    b1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_n) + wcross1_form(chi_u_pr, u_n, wT_n, problem.dimM) \
+                 + adj_curlw_form(chi_u_pr, w_n, problem.dimM, problem.Re)
+    b0_pr = assemble(b1_form_vel)
 
-    u_sol = Function(V_vel)
-    solve(A_vel, u_sol.vector(), b_vel)
+    x_sol = Function(V_pr)
 
-    chi_w = TestFunction(V_vor)
-    w_trial = TrialFunction(V_vor)
+    solve(A0_pr, x_sol.vector(), b0_pr, "gmres", "amg")
 
-    M_vor = assemble(m_form(chi_w, w_trial))
-
-    b_form_vor = curlu_form(chi_w, u_sol, problem.dimM)
-    b_vor = assemble(b_form_vor)
-
-    w_sol = Function(V_vor)
-
-    solve(M_vor, w_sol.vector(), b_vor)
-
-    return u_sol, w_sol
+    return x_sol
 
 def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Implementation of the dual field formulation for periodic navier stokes
@@ -108,19 +98,15 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     w_dl_0 = xdual_0.split(deepcopy=True)[1]
 
     x_0 = [u_pr_0, w_pr_0, p_pr_0]
-    u_pr_half, w_pr_half = explicit_step_primal(dt / 2, problem, x_0, w_dl_0, V_1, V_2)
+
+    xprimal_n12 = explicit_step_primal_incompressible(dt / 2, problem, x_0, w_dl_0, V_primal)
 
     print("Explicit step solved")
 
-    u_pr_12 = interpolate(u_pr_half, V_1)
-    w_pr_12 = interpolate(w_pr_half, V_2)
-    p_pr_init = interpolate(p_pr_0, V_0)
+    u_pr_12, w_pr_12, p_pr_init = xprimal_n12.split(deepcopy=True)
+
 
     # Primal intermediate variables
-    xprimal_n12 = Function(V_primal, name="u, w at n+1/2, p at n")
-    # fa_primal.assign(xprimal_n12, [u_pr_12, w_pr_12, p_pr_init])
-    fa_primal.assign(xprimal_n12, [u_pr_12, w_pr_12, p_pr_init])
-
     xprimal_n32 = Function(V_primal, name="u, w at n+3/2, p at n+1")
 
     # xprimal_n1 = Function(V_primal, name="u, w at n+1, p at n+1/2")
@@ -197,8 +183,6 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     A_dual_static = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
 
-    # A_primal = assemble(a1_primal_static + a2_primal_static + a3_primal_static)
-    # A_dual = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
     # Time loop from 1 onwards
     for ii in tqdm(range(1, n_t+1)):
 
@@ -274,7 +258,7 @@ def wcross1_form(chi_1, v_1, wT_n2, dimM):
     if dimM==3:
         form = inner(chi_1,cross(v_1, wT_n2)) * dx
     elif dimM==2:
-        form = dot(wT_n2, v_1[1]*chi_1[0] - v_1[0]*chi_1[1]) * dx
+        form = wT_n2*dot(chi_1, as_vector([v_1[1], -v_1[0]])) * dx
     return form
 
 
@@ -317,7 +301,8 @@ def wcross2_form(chi_2, vT_2, w_2, dimM):
     if dimM==3:
         form = inner(chi_2,cross(vT_2, w_2)) * dx
     elif dimM==2:
-        form = dot(w_2, vT_2[1]*chi_2[0] - vT_2[0]*chi_2[1]) * dx
+        form = w_2*dot(chi_2, as_vector([vT_2[1], -vT_2[0]])) * dx
+
     return form
 
 def adj_gradp_form(chi_2,pT_3):
