@@ -88,6 +88,6 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(tvec_int, divu_pr_L2, 'b', label="L2 norm div u primal")
-    plt.plot(tvec_stag, divu_pr_L2, 'r', label="L2 norm div u primal")
+    plt.plot(tvec_stag, divu_dl_L2, 'r', label="L2 norm div u primal")
     plt.legend()
     plt.show()

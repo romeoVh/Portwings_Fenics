@@ -10,14 +10,16 @@ if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
     deg = 2
-    n_t = 5
+    n_t = 10
     Delta_t = 1/1000
     t_f = n_t * Delta_t
-    options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
+    options = {"n_el": 3, "t_fin": t_f, "n_t": n_t}
 
-    exact_euler2D = ExactEuler2D(options)
+    # problem = ExactEuler2D(options)
+    # results = compute_sol(exact_euler2D, deg, n_t, t_f)
 
-    results = compute_sol(exact_euler2D, deg, n_t, t_f)
+    problem = ConservationProperties3D(options)
+    results = compute_sol(problem, deg, n_t, t_f)
 
     tvec_int = results["tspan_int"]
     tvec_stag = results["tspan_stag"]
@@ -55,6 +57,12 @@ if __name__ == '__main__':
     plt.plot(tvec_int, H_ex, 'g', label="H exact")
     plt.legend()
 
+    plt.figure()
+    plt.plot(tvec_int, Hel_pr, 'b', label="E primal")
+    plt.plot(tvec_int, Hel_dl, 'r', label="E dual")
+    plt.plot(tvec_int, Hel_ex, 'g', label="E exact")
+    plt.legend()
+
     # plt.figure()
     # plt.plot(tvec_int, E_pr, 'b', label="E primal")
     # plt.plot(tvec_int, E_dl, 'r', label="E dual")
@@ -87,6 +95,6 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(tvec_int, divu_pr_L2, 'b', label="L2 norm div u primal")
-    plt.plot(tvec_stag, divu_pr_L2, 'r', label="L2 norm div u primal")
+    plt.plot(tvec_stag, divu_dl_L2, 'r', label="L2 norm div u primal")
     plt.legend()
     plt.show()
