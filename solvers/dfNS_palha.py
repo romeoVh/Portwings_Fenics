@@ -15,13 +15,15 @@ def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
     x_pr = TrialFunction(V_pr)
     u_pr, w_pr, p_pr = split(x_pr)
 
-    a1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr)
+    a1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
+                  - 0.5*wcross1_form(chi_u_pr, u_pr, wT_n, problem.dimM) \
+                  - 0.5*adj_curlw_form(chi_u_pr, u_pr, problem.dimM, problem.Re)
     a2_form_vor = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
     a3_form_p = - adj_divu_form(chi_p_pr, u_pr)
     A0_pr = assemble(a1_form_vel + a2_form_vor + a3_form_p)
 
-    b1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_n) + wcross1_form(chi_u_pr, u_n, wT_n, problem.dimM) \
-                 + adj_curlw_form(chi_u_pr, w_n, problem.dimM, problem.Re)
+    b1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_n) + 0.5*wcross1_form(chi_u_pr, u_n, wT_n, problem.dimM) \
+                 + 0.5*adj_curlw_form(chi_u_pr, w_n, problem.dimM, problem.Re)
     b0_pr = assemble(b1_form_vel)
 
     x_sol = Function(V_pr)
