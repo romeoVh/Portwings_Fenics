@@ -6,7 +6,7 @@ from .utilities.operators import *
 import matplotlib.pyplot as plt
 from vedo.dolfin import plot
 
-def explicit_step_primal_incompressible(dt_0, problem, u_n, wT_n, V_pr):
+def explicit_step_primal_incompressible(dt_0, problem, u_n, wT_n, V_pr, solver="gmres", precon="icc"):
 
     chi_pr = TestFunction(V_pr)
     chi_u_pr, chi_w_pr, chi_p_pr = split(chi_pr)
@@ -25,11 +25,11 @@ def explicit_step_primal_incompressible(dt_0, problem, u_n, wT_n, V_pr):
 
     x_sol = Function(V_pr)
 
-    solve(A0_pr, x_sol.vector(), b0_pr, "gmres", "icc")
+    solve(A0_pr, x_sol.vector(), b0_pr, solver, precon)
 
     return x_sol
 
-def compute_sol(problem, pol_deg, n_t, t_fin=1):
+def compute_sol(problem, pol_deg, n_t, t_fin=1, solver="gmres", precon="icc"):
     # Implementation of the dual field formulation for periodic navier stokes
     mesh = problem.mesh
     problem.init_mesh()
@@ -252,7 +252,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
         b1_dual = (1/dt) * m_form(chi_u_dl, u_dl_n) + 0.5*wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM)
         bvec_dual = assemble(b1_dual)
-        solve(A_dual, xdual_n1.vector(), bvec_dual, "gmres", "icc")
+        solve(A_dual, xdual_n1.vector(), bvec_dual, solver, precon)
 
         u_dl_n1, w_dl_n1, p_dl_n12 = xdual_n1.split(deepcopy=True)
 
@@ -265,7 +265,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
         b1_primal = (1/dt) * m_form(chi_u_pr, u_pr_n12) + 0.5*wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM)
         bvec_primal = assemble(b1_primal)
-        solve(A_primal, xprimal_n32.vector(), bvec_primal, "gmres", "icc")
+        solve(A_primal, xprimal_n32.vector(), bvec_primal, solver, precon)
 
         u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
         # Use the implicit midpoint rule to find primal variables at integer

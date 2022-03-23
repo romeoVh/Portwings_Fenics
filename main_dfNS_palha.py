@@ -13,7 +13,7 @@ if __name__ == '__main__':
     n_t = 100
     Delta_t = 1/100
     t_f = n_t * Delta_t
-    options = {"n_el": 16, "t_fin": t_f, "n_t": n_t}
+    options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
     if d == 2:
         problem = TaylorGreen2D(options)
     else:
@@ -94,6 +94,6 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(tvec_int, divu_pr_L2, 'b', label="L2 norm div u primal")
-    plt.plot(tvec_stag, divu_dl_L2, 'r', label="L2 norm div u primal")
+    plt.plot(tvec_stag, divu_dl_L2, 'r', label="L2 norm div u dual")
     plt.legend()
     plt.show()

@@ -6,7 +6,7 @@ from .utilities.operators import *
 import matplotlib.pyplot as plt
 from vedo.dolfin import plot
 
-def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
+def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr, solver="gmres", precon="icc"):
     u_n = x_n[0]
     w_n = x_n[1]
 
@@ -19,7 +19,7 @@ def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
     a1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
                   - 0.5*wcross1_form(chi_u_pr, u_pr, wT_n, problem.dimM) \
                   - 0.5*adj_curlw_form(chi_u_pr, w_pr, problem.dimM, problem.Re)
-    a2_form_vor = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
+    a2_form_vor = 1./(2*problem.Re)*(m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM))
     a3_form_p = - adj_divu_form(chi_p_pr, u_pr)
     A0_pr = assemble(a1_form_vel + a2_form_vor + a3_form_p)
 
@@ -29,11 +29,11 @@ def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
 
     x_sol = Function(V_pr)
 
-    solve(A0_pr, x_sol.vector(), b0_pr, "gmres", "icc")
+    solve(A0_pr, x_sol.vector(), b0_pr, solver, precon)
 
     return x_sol
 
-def compute_sol(problem, pol_deg, n_t, t_fin=1):
+def compute_sol(problem, pol_deg, n_t, t_fin=1, solver="gmres", precon="icc"):
     # Implementation of the dual field formulation for periodic navier stokes
     mesh = problem.mesh
     problem.init_mesh()
@@ -103,7 +103,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
     x_0 = [u_pr_0, w_pr_0, p_pr_0]
 
-    xprimal_n12 = explicit_step_primal_incompressible(dt/2, problem, x_0, w_dl_0, V_primal)
+    xprimal_n12 = explicit_step_primal_incompressible(dt/2, problem, x_0, w_dl_0, V_primal, solver=solver, precon=precon)
 
     print("Explicit step solved")
 
@@ -226,7 +226,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Static part of the primal A operator
     a1_primal_static = (1/dt) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
                        - 0.5*adj_curlw_form(chi_u_pr, w_pr, problem.dimM, problem.Re)
-    a2_primal_static = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
+    a2_primal_static = 1./(2*problem.Re)*(m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM))
     a3_primal_static = - adj_divu_form(chi_p_pr, u_pr)
 
     A_primal_static = assemble(a1_primal_static + a2_primal_static + a3_primal_static)
@@ -241,7 +241,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Static part of the dual A operator
     a1_dual_static = (1/dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl) \
                        - 0.5 * curlw_form(chi_u_dl, w_dl, problem.dimM, problem.Re)
-    a2_dual_static = m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
+    a2_dual_static = 1./(2*problem.Re)*(m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM))
     a3_dual_static = - divu_form(chi_p_dl, u_dl)
 
     A_dual_static = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
@@ -260,7 +260,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         b1_dual = (1/dt) * m_form(chi_u_dl, u_dl_n) + 0.5*wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM) \
                   + 0.5*curlw_form(chi_u_dl, w_dl_n, problem.dimM, problem.Re)
         bvec_dual = assemble(b1_dual)
-        solve(A_dual, xdual_n1.vector(), bvec_dual, "gmres", "icc")
+        solve(A_dual, xdual_n1.vector(), bvec_dual, solver, precon)
 
         u_dl_n1, w_dl_n1, p_dl_n12 = xdual_n1.split(deepcopy=True)
 
@@ -274,7 +274,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         b1_primal = (1/dt) * m_form(chi_u_pr, u_pr_n12) + 0.5*wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM) \
                     + 0.5*adj_curlw_form(chi_u_pr, w_pr_n12, problem.dimM, problem.Re)
         bvec_primal = assemble(b1_primal)
-        solve(A_primal, xprimal_n32.vector(), bvec_primal, "gmres", "icc")
+        solve(A_primal, xprimal_n32.vector(), bvec_primal, solver, precon)
 
         u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
         # Use the implicit midpoint rule to find primal variables at integer
