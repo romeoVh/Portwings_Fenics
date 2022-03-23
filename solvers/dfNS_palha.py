@@ -267,12 +267,12 @@ def gradp_form(chi_1, p_0):
     return form
 
 def adj_curlw_form(chi_1, w_2, dimM, Re):
-    if dimM==3:
-        form = -1./Re*inner(curl(chi_1),w_2) * dx
-    elif dimM==2:
-        form = -1./Re*dot(curl2D(chi_1),w_2) * dx
-    return form
-    # return 0
+    # if dimM==3:
+    #     form = -1./Re*inner(curl(chi_1),w_2) * dx
+    # elif dimM==2:
+    #     form = -1./Re*dot(curl2D(chi_1),w_2) * dx
+    # return form
+    return 0
 
 def adj_divu_form(chi_0, v_1):
     form = inner(grad(chi_0),v_1) * dx
@@ -310,13 +310,13 @@ def adj_gradp_form(chi_2,pT_3):
     return form
 
 def curlw_form(chi_2,wT_1,dimM, Re):
-    if dimM == 3:
-        form = -1./Re*inner(chi_2, curl(wT_1)) * dx
-    elif dimM == 2:
-        form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
-        # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
-    return form
-    # return 0
+    # if dimM == 3:
+    #     form = -1./Re*inner(chi_2, curl(wT_1)) * dx
+    # elif dimM == 2:
+    #     form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
+    #     # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
+    # return form
+    return 0
 
 def divu_form(chi_3, vT_2):
     form = -inner(chi_3, div(vT_2)) * dx
