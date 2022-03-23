@@ -3,7 +3,7 @@ from time import time
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from vedo.dolfin import plot
+#from vedo.dolfin import plot
 
 def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
     u_n = x_n[0]
