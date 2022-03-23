@@ -11,8 +11,8 @@ if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
     deg = 1
-    n_t = 1
-    Delta_t = 1/10000
+    n_t = 100
+    Delta_t = 1/100
     t_f = n_t * Delta_t
     options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
     if d == 2:
