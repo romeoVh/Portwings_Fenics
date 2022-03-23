@@ -6,9 +6,7 @@ from .utilities.operators import *
 import matplotlib.pyplot as plt
 from vedo.dolfin import plot
 
-def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
-    u_n = x_n[0]
-    w_n = x_n[1]
+def explicit_step_primal_incompressible(dt_0, problem, u_n, wT_n, V_pr):
 
     chi_pr = TestFunction(V_pr)
     chi_u_pr, chi_w_pr, chi_p_pr = split(chi_pr)
@@ -17,14 +15,12 @@ def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
     u_pr, w_pr, p_pr = split(x_pr)
 
     a1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
-                  - 0.5*wcross1_form(chi_u_pr, u_pr, wT_n, problem.dimM) \
-                  - 0.5*adj_curlw_form(chi_u_pr, w_pr, problem.dimM, problem.Re)
+                  - 0.5*wcross1_form(chi_u_pr, u_pr, wT_n, problem.dimM)
     a2_form_vor = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
     a3_form_p = - adj_divu_form(chi_p_pr, u_pr)
     A0_pr = assemble(a1_form_vel + a2_form_vor + a3_form_p)
 
-    b1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_n) + 0.5*wcross1_form(chi_u_pr, u_n, wT_n, problem.dimM) \
-                 + 0.5*adj_curlw_form(chi_u_pr, w_n, problem.dimM, problem.Re)
+    b1_form_vel = (1 / dt_0) * m_form(chi_u_pr, u_n) + 0.5*wcross1_form(chi_u_pr, u_n, wT_n, problem.dimM)
     b0_pr = assemble(b1_form_vel)
 
     x_sol = Function(V_pr)
@@ -101,9 +97,8 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_pr_0, w_pr_0, p_pr_0 = xprimal_0.split(deepcopy=True)
     u_dl_0, w_dl_0, p_dl_0 = xdual_0.split(deepcopy=True)
 
-    x_0 = [u_pr_0, w_pr_0, p_pr_0]
 
-    xprimal_n12 = explicit_step_primal_incompressible(dt/2, problem, x_0, w_dl_0, V_primal)
+    xprimal_n12 = explicit_step_primal_incompressible(dt/2, problem, u_pr_0, w_dl_0, V_primal)
 
     print("Explicit step solved")
 
@@ -224,8 +219,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_pr, w_pr, p_pr = split(x_primal)
 
     # Static part of the primal A operator
-    a1_primal_static = (1/dt) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
-                       - 0.5*adj_curlw_form(chi_u_pr, w_pr, problem.dimM, problem.Re)
+    a1_primal_static = (1/dt) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr)
     a2_primal_static = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
     a3_primal_static = - adj_divu_form(chi_p_pr, u_pr)
 
@@ -239,8 +233,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_dl, w_dl, p_dl = split(x_dual)
 
     # Static part of the dual A operator
-    a1_dual_static = (1/dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl) \
-                       - 0.5 * curlw_form(chi_u_dl, w_dl, problem.dimM, problem.Re)
+    a1_dual_static = (1/dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl)
     a2_dual_static = m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
     a3_dual_static = - divu_form(chi_p_dl, u_dl)
 
@@ -257,8 +250,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
         u_dl_n, w_dl_n, p_dl_12n = xdual_n.split(deepcopy=True)
 
-        b1_dual = (1/dt) * m_form(chi_u_dl, u_dl_n) + 0.5*wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM) \
-                  + 0.5*curlw_form(chi_u_dl, w_dl_n, problem.dimM, problem.Re)
+        b1_dual = (1/dt) * m_form(chi_u_dl, u_dl_n) + 0.5*wcross2_form(chi_u_dl, u_dl_n, w_pr_n12, problem.dimM)
         bvec_dual = assemble(b1_dual)
         solve(A_dual, xdual_n1.vector(), bvec_dual, "gmres", "icc")
 
@@ -271,8 +263,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         A_primal = A_primal_static + A_primal_dynamic
 
         u_pr_n12, w_pr_n12, p_pr_n12 = xprimal_n12.split(deepcopy=True)
-        b1_primal = (1/dt) * m_form(chi_u_pr, u_pr_n12) + 0.5*wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM) \
-                    + 0.5*adj_curlw_form(chi_u_pr, w_pr_n12, problem.dimM, problem.Re)
+        b1_primal = (1/dt) * m_form(chi_u_pr, u_pr_n12) + 0.5*wcross1_form(chi_u_pr, u_pr_n12, w_dl_n1, problem.dimM)
         bvec_primal = assemble(b1_primal)
         solve(A_primal, xprimal_n32.vector(), bvec_primal, "gmres", "icc")
 

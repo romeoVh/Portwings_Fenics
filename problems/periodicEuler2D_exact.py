@@ -4,23 +4,15 @@ from math import pi
 import sympy as sym
 
 
-class TaylorGreen2D(ProblemBase):
+class ExactEuler2D(ProblemBase):
     "2D Taylor Green problem."
     def __init__(self, options):
         ProblemBase.__init__(self, options)
 
-        self.mesh = RectangleMesh(Point(0, 0), Point(2, 2), self.n_el, self.n_el, "crossed")
+        self.mesh = UnitSquareMesh(self.n_el, self.n_el, "crossed")
         self.init_mesh()
         self.structured_time_grid()
 
-        # Set viscosity
-        self.mu = 1.0 / 100
-        # Set density
-        self.rho = 1
-        # Set kinematic viscosity
-        self.nu = self.mu/self.rho
-        # Reynolds number
-        self.Re = 1/self.nu
         # Periodic Problem
         self.periodic = True
         # Solution exact
@@ -36,12 +28,12 @@ class TaylorGreen2D(ProblemBase):
         x, y = sym.symbols('x[0],x[1]')
         t = sym.symbols(time_str)
 
-        v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
-        v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        v_1 = 1-2*Cos(2*pi*(x-t))*Sin(2*pi*(y-t))
+        v_2 = 1+2*Sin(2*pi*(x-t))*Cos(2*pi*(y-t))
 
-        p = (1/4)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
+        p = -Cos(4*pi*(x-t)) - Cos(4*pi*(y-t))
 
-        w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        w = 8*pi*Cos(2*pi*(x-t))*Cos(2*pi*(y-t))
         return [v_1,v_2], w, p
 
     def get_exact_sol_at_t(self, t_i):
@@ -80,7 +72,10 @@ class TaylorGreen2D(ProblemBase):
         u_ex_t, w_ex_t, p_ex_t = self.get_exact_sol_at_t(t_c)
         H_ex_t = 0.5 * (inner(u_ex_t, u_ex_t) * dx(domain=self.mesh))
         E_ex_t = 0.5 * (inner(w_ex_t, w_ex_t) * dx(domain=self.mesh))
-        Ch_ex_t = None#(inner(u_ex_t, w_ex_t) * dx(domain=self.mesh))
+        if self.dimM == 2:
+            Ch_ex_t = None
+        elif self.dimM == 2:
+            Ch_ex_t = inner(u_ex_t, w_ex_t) * dx(domain=self.mesh)
         return [u_ex_t, w_ex_t, p_ex_t,H_ex_t,E_ex_t,Ch_ex_t]
 
     def calculate_outputs(self,exact_arr, u_t,w_t,p_t):
@@ -104,7 +99,7 @@ class TaylorGreen2D(ProblemBase):
 
 
     def __str__(self):
-        return "TaylorGreen2D"
+        return "PeriodicAnalyticalEuler2D"
 
 
 class PeriodicBoundary(SubDomain):
@@ -112,21 +107,21 @@ class PeriodicBoundary(SubDomain):
     def inside(self, x, on_boundary):
         # return True if on left or bottom boundary AND NOT on one of the two slave edges
         return bool((near(x[0], 0) or near(x[1], 0)) and
-            (not ((near(x[0], 2) and near(x[1], 0)) or
-                  (near(x[0], 0) and near(x[1], 2)))) and on_boundary)
+            (not ((near(x[0], 1) and near(x[1], 0)) or
+                  (near(x[0], 0) and near(x[1], 1)))) and on_boundary)
 
     def map(self, x, y):
         #### define mapping for a single point in the rectangle, such that 2 mappings are required
-        if near(x[0], 2) and near(x[1], 2):
-            y[0] = x[0] - 2
-            y[1] = x[1] - 2
+        if near(x[0], 1) and near(x[1], 1):
+            y[0] = x[0] - 1
+            y[1] = x[1] - 1
         #### define mapping for edges in the rectangle, such that 1 mappings is required
-        elif near(x[0], 2):
-            y[0] = x[0] - 2
+        elif near(x[0], 1):
+            y[0] = x[0] - 1
             y[1] = x[1]
-        elif near(x[1], 2):
+        elif near(x[1], 1):
             y[0] = x[0]
-            y[1] = x[1] - 2
+            y[1] = x[1] - 1
         else:
             y[0] = -1000
             y[1] = -1000
