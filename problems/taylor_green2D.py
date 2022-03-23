@@ -13,11 +13,10 @@ class TaylorGreen2D(ProblemBase):
         self.mesh = RectangleMesh(Point(0, 0), Point(2, 2), self.n_el, self.n_el, "crossed")
         self.init_mesh()
         self.structured_time_grid()
-
         # Set viscosity
         self.mu = 1.0 / 100
         # Set density
-        self.rho = 1
+        self.rho = 1.0
         # Set kinematic viscosity
         self.nu = self.mu/self.rho
         # Reynolds number
@@ -40,9 +39,15 @@ class TaylorGreen2D(ProblemBase):
         v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
 
-        p = (1/4)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
+        p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
 
-        w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+
+
+        # Check divergence is zero and alignment of velocity and vorticity vector fields
+        # div_v = sym.diff(v_1,x) + sym.diff(v_2,y)
+        # print("Exact divergence:", sym.simplify(div_v))
+        w = sym.diff(v_2, x) - sym.diff(v_1, y)
+        #w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         return [v_1,v_2], w, p
 
     def get_exact_sol_at_t(self, t_i):

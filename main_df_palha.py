@@ -11,7 +11,7 @@ if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
     deg = 1
-    n_t = 100
+    n_t = 200
     Delta_t = 1/100
     t_f = n_t * Delta_t
     options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
@@ -19,19 +19,37 @@ if __name__ == '__main__':
         taylorgreen = TaylorGreen2D(options)
     else:
         taylorgreen = TaylorGreen3D(options)
-    tvec_int, tvec_stag, H_pr, H_dl, H_ex, wP_pr, wP_dl, wP_ex = compute_sol(taylorgreen, deg, n_t, t_f)
+    tvec_int, tvec_stag, H_pr, H_dl, H_ex, E_pr, E_dl, E_ex,\
+    wP_pr, wP_dl, wP_ex,pP_pr, pP_dl, pP_ex, div_pr,div_dl = compute_sol(taylorgreen, deg, n_t, t_f)
     # cons_prop = ConservationProperties3D(options)
     # tvec_int, tvec_stag, H_pr, H_dl, H_ex, wP_pr, wP_dl, wP_ex = compute_sol(cons_prop, deg, n_t, t_f)
-    plt.figure()
+    plt.subplot(2,3,1)
     plt.plot(tvec_stag, H_pr, 'b', label="H primal")
     plt.plot(tvec_int, H_dl, 'r', label="H dual")
-    plt.plot(tvec_int, H_ex, 'g', label="H exact")
+    plt.plot(tvec_stag, H_ex, 'g', label="H exact")
     plt.legend()
 
-    print(len(wP_dl))
-    plt.figure()
+    plt.subplot(2,3,2)
+    plt.plot(tvec_stag, E_pr, 'b', label="E primal")
+    plt.plot(tvec_int, E_dl, 'r', label="E dual")
+    plt.plot(tvec_stag, E_ex, 'g', label="E exact")
+    plt.legend()
+
+    plt.subplot(2,3,3)
     plt.plot(tvec_stag, wP_pr, 'b', label="w at P primal")
     plt.plot(tvec_int, wP_dl, 'r', label="w at P dual")
-    plt.plot(tvec_int, wP_ex, 'g', label="w at P exact")
+    plt.plot(tvec_stag, wP_ex, 'g', label="w at P exact")
     plt.legend()
+
+    plt.subplot(2,3,4)
+    plt.plot(tvec_stag, pP_pr, 'b', label="p at P primal")
+    plt.plot(tvec_int, pP_dl, 'r', label="p at P dual")
+    plt.plot(tvec_stag, pP_ex, 'g', label="p at P exact")
+    plt.legend()
+
+    plt.subplot(2,3,5)
+    plt.plot(tvec_stag, div_pr, 'b', label="div(u) primal")
+    plt.plot(tvec_int, div_dl, 'r', label="div(u) dual")
+    plt.legend()
+
     plt.show()
