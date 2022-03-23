@@ -15,10 +15,10 @@ if __name__ == '__main__':
     t_f = n_t * Delta_t
     options = {"n_el": 16, "t_fin": t_f, "n_t": n_t}
     if d == 2:
-        taylorgreen = TaylorGreen2D(options)
+        problem = TaylorGreen2D(options)
     else:
-        taylorgreen = TaylorGreen3D(options)
-    results = compute_sol(taylorgreen, deg, n_t, t_f)
+        problem = TaylorGreen3D(options)
+    results = compute_sol(problem, deg, n_t, t_f)
 
     tvec_int = results["tspan_int"]
     tvec_stag = results["tspan_stag"]
@@ -53,37 +53,43 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(tvec_int, H_pr, 'b', label="H primal")
     plt.plot(tvec_int, H_dl, 'r', label="H dual")
-    plt.plot(tvec_int, H_ex, 'g', label="H exact")
+    if problem.exact:
+        plt.plot(tvec_int, H_ex, 'g', label="H exact")
     plt.legend()
 
     # plt.figure()
     # plt.plot(tvec_int, E_pr, 'b', label="E primal")
     # plt.plot(tvec_int, E_dl, 'r', label="E dual")
-    # plt.plot(tvec_int, E_ex, 'g', label="E exact")
+    # if problem.exact:
+    #     plt.plot(tvec_int, E_ex, 'g', label="E exact")
     # plt.legend()
     #
     # plt.figure()
     # plt.plot(tvec_int, uP_pr[:, 0], 'b', label="ux at P primal")
     # plt.plot(tvec_int, uP_dl[:, 0], 'r', label="ux at P dual")
-    # plt.plot(tvec_int, uP_ex[:, 0], 'g', label="ux at P exact")
+    # if problem.exact:
+        # plt.plot(tvec_int, uP_ex[:, 0], 'g', label="ux at P exact")
     # plt.legend()
     #
     # plt.figure()
     # plt.plot(tvec_int, uP_pr[:, 1], 'b', label="uy at P primal")
     # plt.plot(tvec_int, uP_dl[:, 1], 'r', label="uy at P dual")
-    # plt.plot(tvec_int, uP_ex[:, 1], 'g', label="uy at P exact")
+    # if problem.exact:
+    #     plt.plot(tvec_int, uP_ex[:, 1], 'g', label="uy at P exact")
     # plt.legend()
 
     plt.figure()
     plt.plot(tvec_int, wP_pr, 'b', label="w at P primal")
     plt.plot(tvec_int, wP_dl, 'r', label="w at P dual")
-    plt.plot(tvec_int, wP_ex, 'g', label="w at P exact")
+    if problem.exact:
+        plt.plot(tvec_int, wP_ex, 'g', label="w at P exact")
     plt.legend()
 
     plt.figure()
     plt.plot(tvec_int, pdynP_pr, 'b', label="p dyn at P primal")
     plt.plot(tvec_stag, pdynP_dl, 'r', label="p dyn at P dual")
-    plt.plot(tvec_int, pdynP_ex, 'g', label="p dyn at P exact")
+    if problem.exact:
+        plt.plot(tvec_int, pdynP_ex, 'g', label="p dyn at P exact")
     plt.legend()
 
     plt.figure()

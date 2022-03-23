@@ -276,29 +276,33 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         bvec_primal = assemble(b1_primal)
         solve(A_primal, xprimal_n32.vector(), bvec_primal, "gmres", "icc")
 
+        u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
+        # Use the implicit midpoint rule to find primal variables at integer
+
         xprimal_n1.assign(0.5*(xprimal_n12 + xprimal_n32))
         u_pr_n1, w_pr_n1, p_pr_n12 = xprimal_n1.split(deepcopy=True)
 
-        u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
-
+        # Compute the Hamiltonian
         H_dl_n1 = 0.5 * dot(u_dl_n1, u_dl_n1) * dx
         H_dl_vec[ii] = assemble(H_dl_n1)
 
         H_pr_n1 = 0.5 * dot(u_pr_n1, u_pr_n1) * dx
         H_pr_vec[ii] = assemble(H_pr_n1)
 
+        # The Enstrophy
         E_dl_n1 = 0.5 * dot(w_dl_n1, w_dl_n1) * dx
         E_dl_vec[ii] = assemble(E_dl_n1)
 
         E_pr_n1 = 0.5 * dot(w_pr_n1, w_pr_n1) * dx
         E_pr_vec[ii] = assemble(E_pr_n1)
 
+        # The divergence constraint
         divu_pr_n1 = div(u_pr_n1) ** 2 * dx
         divu_dl_n1 = div(u_dl_n1) ** 2 * dx
 
         div_u_pr_L2vec[ii] = np.sqrt(assemble(divu_pr_n1))
         div_u_dl_L2vec[ii] = np.sqrt(assemble(divu_dl_n1))
-
+        # If problem is 3D also the Helicity
         if problem.dimM ==3:
             Hel_pr_n1 = dot(u_pr_n1, w_dl_n1) * dx
             Hel_dl_n1 = dot(u_dl_n1, w_pr_n1) * dx
@@ -306,6 +310,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
             Hel_pr_vec[ii] = assemble(Hel_pr_n1)
             Hel_dl_vec[ii] = assemble(Hel_dl_n1)
 
+        # Compute solution at a given point to assess convergence
         u_pr_P_vec[ii, :] = u_pr_n1(point_P)
         w_pr_P_vec[ii, :] = w_pr_n1(point_P)
         pdyn_pr_P_vec[ii] = p_pr_n1(point_P)
@@ -314,10 +319,11 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         w_dl_P_vec[ii, :] = w_dl_n1(point_P)
         pdyn_dl_P_vec[ii] = p_dl_n12(point_P)
 
+        # Reassign dual, primal for next iteration
         xdual_n.assign(xdual_n1)
         xprimal_n12.assign(xprimal_n32)
 
-        # Reassign dual, primal, exact
+
 
     # Compute exact energy and vorticity
     if problem.exact == True:
