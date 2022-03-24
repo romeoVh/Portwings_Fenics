@@ -3,22 +3,28 @@ from problems.taylor_green3D import TaylorGreen3D
 from problems.conservation_properties3D import ConservationProperties3D
 from solvers.dfNS_palha import compute_sol
 import matplotlib.pyplot as plt
+from fenics import *
 
 from math import pi
 d = 2 # int(input("Spatial dimension ? "))
+list_linear_solver_methods()
+list_krylov_solver_preconditioners()
 
 if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
     deg = 1
-    n_t = 100
-    Delta_t = 1/200
+    n_t = 50
+    Delta_t = 1/100
     t_f = n_t * Delta_t
-    options = {"n_el": 32, "t_fin": t_f, "n_t": n_t}
+    options = {"n_el": 10, "t_fin": t_f, "n_t": n_t}
     if d == 2:
         taylorgreen = TaylorGreen2D(options)
     else:
         taylorgreen = TaylorGreen3D(options)
+
+    solver = KrylovSolver()
+
     tvec_int, tvec_stag, H_pr, H_dl, H_ex, E_pr, E_dl, E_ex,\
     wP_pr, wP_dl, wP_ex,pP_pr, pP_dl, pP_ex, div_pr,div_dl = compute_sol(taylorgreen, deg, n_t, t_f)
     # cons_prop = ConservationProperties3D(options)

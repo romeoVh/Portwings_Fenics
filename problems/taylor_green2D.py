@@ -6,15 +6,15 @@ import sympy as sym
 
 
 class TaylorGreen2D(ProblemBase):
-    "2D Taylor Green problem."
+    "2D periodic problem with known analytical solution."
     def __init__(self, options):
         ProblemBase.__init__(self, options)
-
         self.mesh = RectangleMesh(Point(0, 0), Point(2, 2), self.n_el, self.n_el, "crossed")
+
         self.init_mesh()
         self.structured_time_grid()
         # Set viscosity
-        self.mu = 1.0 / 100
+        self.mu = 1.0 / 100.0
         # Set density
         self.rho = 1.0
         # Set kinematic viscosity
@@ -36,22 +36,22 @@ class TaylorGreen2D(ProblemBase):
         x, y = sym.symbols('x[0],x[1]')
         t = sym.symbols(time_str)
 
-        v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
-        v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        # Implementation 1
+        # v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        # v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
+        # p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(-4*(pi**2)*self.nu*t)
 
-        p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(-4*(pi**2)*self.nu*t)
-
-        v_2 = -Sin(pi * x) * Cos(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
-        v_1 = Cos(pi * x) * Sin(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
-
+        # Implementation 2
+        v_1 = -Cos(pi * x) * Sin(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
+        v_2 = Sin(pi * x) * Cos(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
         p = -(1.0 / 4.0) * (Cos(2 * pi * x) + Cos(2 * pi * y)) * Exp(-4 * (pi ** 2) * self.nu * t)
 
         p = p+ 0.5 *(v_1*v_1 + v_2*v_2)
 
 
         # Check divergence is zero and alignment of velocity and vorticity vector fields
-        div_v = sym.diff(v_1,x) + sym.diff(v_2,y)
-        print("Exact divergence:", sym.simplify(div_v))
+        #div_v = sym.diff(v_1,x) + sym.diff(v_2,y)
+        #print("Exact divergence:", sym.simplify(div_v))
         w = sym.diff(v_2, x) - sym.diff(v_1, y)
         #w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         return [v_1,v_2], w, p
@@ -140,5 +140,6 @@ class PeriodicBoundary(SubDomain):
             y[0] = x[0]
             y[1] = x[1] - 2
         else:
-            y[0] = -1000
-            y[1] = -1000
+            y[0] = -0
+            y[1] = -0
+
