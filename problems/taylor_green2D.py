@@ -40,7 +40,7 @@ class TaylorGreen2D(ProblemBase):
         v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
 
         p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
-
+        p = p+ 0.5 *(v_1*v_1 + v_2*v_2)
 
 
         # Check divergence is zero and alignment of velocity and vorticity vector fields

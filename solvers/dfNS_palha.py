@@ -34,8 +34,9 @@ def explicit_step_primal_incompressible(dt_0, problem, x_n, wT_n, V_pr):
 
 def calculate_exact_outputs_at_t(problem,point_P,t_i):
     u_ex_t, w_ex_t, p_ex_t, H_ex_t, E_ex_t, Ch_ex_t = problem.init_outputs(t_i)
-    p_tot_at_P = 0.5 * (inner(u_ex_t, u_ex_t)(point_P)) + p_ex_t(point_P)
-    return assemble(H_ex_t),assemble(E_ex_t),w_ex_t(point_P),p_tot_at_P
+    #p_tot_at_P = 0.5 * (inner(u_ex_t, u_ex_t)(point_P)) + p_ex_t(point_P)
+    # Modified exact solution to return total pressure instead
+    return assemble(H_ex_t),assemble(E_ex_t),w_ex_t(point_P),p_ex_t(point_P)
 
 
 def compute_sol(problem, pol_deg, n_t, t_fin=1):
@@ -48,8 +49,8 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     tvec_int = np.linspace(0, n_t * float(dt), 1 + n_t)
     tvec_stag = np.linspace(float(dt)/2, float(dt)*(n_t + 1/2), n_t+1)
     tvec_stag = np.insert(tvec_stag,0,0)
-    print(tvec_int)
-    print(tvec_stag)
+    #print(tvec_int)
+    #print(tvec_stag)
 
     # Primal trimmed polynomial finite element families
     ufl_cell = mesh.ufl_cell()
@@ -122,7 +123,7 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     p_ex_P_vec = np.zeros((n_t + 2))
 
     if problem.exact == True:
-        H_ex_vec[0],E_ex_vec[0],w_ex_P_vec[0],p_ex_P_vec[0] =  calculate_exact_outputs_at_t(problem, point_P, 0)
+        H_ex_vec[0],E_ex_vec[0],w_ex_P_vec[0],p_ex_P_vec[0] = calculate_exact_outputs_at_t(problem, point_P, 0)
     # ------------------------------------------
     # Primal Quantities
     # Energy, Enstrophy, pressure at P and vorticity at P and divergence of vector field
@@ -136,9 +137,11 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_pr_0, w_pr_0, p_pr_0 = xprimal_0.split(deepcopy=True)
     H_pr_vec[0] = assemble(0.5 * dot(u_pr_0, u_pr_0) * dx)
     E_pr_vec[0] = assemble(0.5 * dot(w_pr_0, w_pr_0) * dx)
-    w_pr_P_vec[0] = w_pr_0(point_P)
-    p_pr_P_vec[0] = p_pr_0(point_P)
     divU_pr_vec[0] = assemble((div(u_pr_0)) ** 2 * dx)
+    p_pr_P_vec[0] = p_pr_0(point_P)
+    if problem.dimM == 2:
+        w_pr_P_vec[0] = w_pr_0(point_P)
+
     # ------------------------------------------
     # Dual Quantities
     # Energy, Enstrophy, pressure at P and vorticity at P and divergence of vector field
@@ -152,9 +155,11 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     u_dl_0, w_dl_0, p_dl_0 = xdual_0.split(deepcopy=True)
     H_dl_vec[0] = assemble(0.5 * dot(u_dl_0, u_dl_0) * dx)
     E_dl_vec[0] = assemble(0.5 * dot(w_dl_0, w_dl_0) * dx)
-    w_dl_P_vec[0] = w_dl_0(point_P)
-    p_dl_P_vec[0] = p_dl_0(point_P)
     divU_dl_vec[0] = assemble((div(u_dl_0)) ** 2 * dx)
+    p_dl_P_vec[0] = p_dl_0(point_P)
+    if problem.dimM == 2:
+        w_dl_P_vec[0] = w_dl_0(point_P)
+
     # ------------------------------------------
     # Compare at t=0
     print("t = 0: Exact",[H_ex_vec[0],E_ex_vec[0],w_ex_P_vec[0],p_ex_P_vec[0]])
@@ -169,14 +174,14 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     print("Explicit step solved")
     # ------------------------------------------
     # Evaluate 1st step
-    if problem.exact == True:
-        H_ex_vec[1],E_ex_vec[1],w_ex_P_vec[1],p_ex_P_vec[1] =  calculate_exact_outputs_at_t(problem, point_P, dt / 2)
-
     H_pr_vec[1] = assemble(0.5 * dot(u_pr_12, u_pr_12) * dx)
     E_pr_vec[1] = assemble(0.5 * dot(w_pr_12, w_pr_12) * dx)
-    w_pr_P_vec[1] = w_pr_12(point_P)
-    p_pr_P_vec[1] = p_pr_init(point_P)
     divU_pr_vec[1] = assemble((div(u_pr_12)) ** 2 * dx)
+    p_pr_P_vec[1] = p_pr_init(point_P)
+    if problem.dimM ==2:
+        w_pr_P_vec[1] = w_pr_12(point_P)
+    if problem.exact == True:
+        H_ex_vec[1], E_ex_vec[1], w_ex_P_vec[1], p_ex_P_vec[1] = calculate_exact_outputs_at_t(problem, point_P, dt / 2)
     # ------------------------------------------
     # Compare at t=dt/2
     print("t = dt/2: Exact", [H_ex_vec[1], E_ex_vec[1], w_ex_P_vec[1],
@@ -201,8 +206,14 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Static part of the primal A operator
     a1_primal_static = (1/dt) * m_form(chi_u_pr, u_pr) - gradp_form(chi_u_pr, p_pr) \
                        - 0.5*adj_curlw_form(chi_u_pr, w_pr, problem.dimM, problem.Re)
-    a2_primal_static = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
-    a3_primal_static = - adj_divu_form(chi_p_pr, u_pr)
+
+    # Non-symmetric implementation
+    #a2_primal_static = m_form(chi_w_pr, w_pr) - curlu_form(chi_w_pr, u_pr, problem.dimM)
+    #a3_primal_static = - adj_divu_form(chi_p_pr, u_pr)
+    # Symmetric implementation
+    a2_primal_static = -0.5*m_form(chi_w_pr, w_pr) + 0.5*curlu_form(chi_w_pr, u_pr, problem.dimM)
+    a3_primal_static = adj_divu_form(chi_p_pr, u_pr)
+
 
     A_primal_static = assemble(a1_primal_static + a2_primal_static + a3_primal_static)
     # ------------------------------------------
@@ -215,8 +226,12 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
     # Static part of the dual A operator
     a1_dual_static = (1/dt) * m_form(chi_u_dl, u_dl) - adj_gradp_form(chi_u_dl, p_dl) \
                        - 0.5 * curlw_form(chi_u_dl, w_dl, problem.dimM, problem.Re)
-    a2_dual_static = m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
     a3_dual_static = - divu_form(chi_p_dl, u_dl)
+
+    # Non-symmetric implementation
+    #a2_dual_static = m_form(chi_w_dl, w_dl) - adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
+    # Symmetric implementation
+    a2_dual_static = -0.5*m_form(chi_w_dl, w_dl) +0.5* adj_curlu_form(chi_w_dl, u_dl, problem.dimM)
 
     A_dual_static = assemble(a1_dual_static + a2_dual_static + a3_dual_static)
     # ------------------------------------------
@@ -241,9 +256,10 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
 
         H_dl_vec[ii] = assemble(0.5 * dot(u_dl_n1, u_dl_n1) * dx)
         E_dl_vec[ii] = assemble(0.5 * dot(w_dl_n1, w_dl_n1) * dx)
-        w_dl_P_vec[ii] = w_dl_n1(point_P)
-        p_dl_P_vec[ii] = p_dl_n12(point_P)
         divU_dl_vec[ii] = assemble((div(u_dl_n1)) ** 2 * dx)
+        p_dl_P_vec[ii] = p_dl_n12(point_P)
+        if problem.dimM ==2:
+            w_dl_P_vec[ii] = w_dl_n1(point_P)
 
 
         # Solve primal system at n_32
@@ -264,21 +280,17 @@ def compute_sol(problem, pol_deg, n_t, t_fin=1):
         u_pr_n32, w_pr_n32, p_pr_n1 = xprimal_n32.split(deepcopy=True)
         H_pr_vec[ii+1] = assemble(0.5 * dot(u_pr_n32, u_pr_n32) * dx)
         E_pr_vec[ii+1] = assemble(0.5 * dot(w_pr_n32, w_pr_n32) * dx)
-        w_pr_P_vec[ii+1] = w_pr_n32(point_P)
-        p_pr_P_vec[ii+1] = p_pr_n1(point_P)
         divU_pr_vec[ii+1] = assemble((div(u_pr_n32)) ** 2 * dx)
+        p_pr_P_vec[ii + 1] = p_pr_n1(point_P)
+
+        if problem.dimM ==2:
+            w_pr_P_vec[ii + 1] = w_pr_n32(point_P)
+        if problem.exact:
+            H_ex_vec[ii+1],E_ex_vec[ii+1],w_ex_P_vec[ii+1],p_ex_P_vec[ii+1] =  calculate_exact_outputs_at_t(problem, point_P, (ii+1/2) * dt)
 
         # Reassign dual, primal
         xdual_n.assign(xdual_n1)
         xprimal_n12.assign(xprimal_n32)
-
-        # if problem.dimM==2:
-        #     w_dl_P_vec[ii] = w_dl_n1(point_P)
-        #     w_pr_P_vec[ii] = w_pr_n32(point_P)
-
-        # Compute exact quantities
-        if problem.exact == True:
-            H_ex_vec[ii+1],E_ex_vec[ii+1],w_ex_P_vec[ii+1],p_ex_P_vec[ii+1] =  calculate_exact_outputs_at_t(problem, point_P, (ii+1/2) * dt)
 
     return tvec_int, tvec_stag,  H_pr_vec, H_dl_vec, H_ex_vec,\
            E_pr_vec,E_dl_vec,E_ex_vec, w_pr_P_vec, w_dl_P_vec, w_ex_P_vec,\
@@ -356,12 +368,12 @@ def curlw_form(chi_2,wT_1,dimM, Re):
         form = -1./Re*inner(chi_2, curl(wT_1)) * dx
     elif dimM == 2:
         form = -1./Re*dot(chi_2, rot2D(wT_1)) * dx
-        # 2D Curl i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
+        # 2D ROT i.e. rotated grad:  // ux = u.dx(0) // uy = u.dx(1) // as_vector((uy, -ux))
     return form
     # return 0
 
 def divu_form(chi_3, vT_2):
-    form = -inner(chi_3, div(vT_2)) * dx
+    form = inner(chi_3, div(vT_2)) * dx
     return form
 
 def adj_curlu_form(chi_1, vT_2, dimM):
