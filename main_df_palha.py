@@ -5,16 +5,16 @@ from solvers.dfNS_palha import compute_sol
 import matplotlib.pyplot as plt
 
 from math import pi
-d = 3 # int(input("Spatial dimension ? "))
+d = 2 # int(input("Spatial dimension ? "))
 
 if __name__ == '__main__':
     # 1. Select Problem:
     # Taylor Green 2D
-    deg = 2
-    n_t = 5
-    Delta_t = 1/100
+    deg = 1
+    n_t = 100
+    Delta_t = 1/200
     t_f = n_t * Delta_t
-    options = {"n_el": 3, "t_fin": t_f, "n_t": n_t}
+    options = {"n_el": 32, "t_fin": t_f, "n_t": n_t}
     if d == 2:
         taylorgreen = TaylorGreen2D(options)
     else:

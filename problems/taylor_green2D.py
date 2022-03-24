@@ -39,13 +39,19 @@ class TaylorGreen2D(ProblemBase):
         v_1 = -Sin(pi*x)*Cos(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         v_2 = Cos(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
 
-        p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(4*(pi**2)*self.nu*t)
+        p = (1.0/4.0)*(Cos(2*pi*x) + Cos(2*pi*y))*Exp(-4*(pi**2)*self.nu*t)
+
+        v_2 = -Sin(pi * x) * Cos(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
+        v_1 = Cos(pi * x) * Sin(pi * y) * Exp(-2 * (pi ** 2) * self.nu * t)
+
+        p = -(1.0 / 4.0) * (Cos(2 * pi * x) + Cos(2 * pi * y)) * Exp(-4 * (pi ** 2) * self.nu * t)
+
         p = p+ 0.5 *(v_1*v_1 + v_2*v_2)
 
 
         # Check divergence is zero and alignment of velocity and vorticity vector fields
-        # div_v = sym.diff(v_1,x) + sym.diff(v_2,y)
-        # print("Exact divergence:", sym.simplify(div_v))
+        div_v = sym.diff(v_1,x) + sym.diff(v_2,y)
+        print("Exact divergence:", sym.simplify(div_v))
         w = sym.diff(v_2, x) - sym.diff(v_1, y)
         #w = -2*pi*Sin(pi*x)*Sin(pi*y)*Exp(-2*(pi**2)*self.nu*t)
         return [v_1,v_2], w, p
