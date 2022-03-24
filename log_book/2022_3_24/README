@@ -1,0 +1,44 @@
+Observations when running palha solver on branch "debug_TaylorGreen":
+
+-----------------------------------------------------------------
+1) For parameters:
+d=2, deg=1, n_t=100, Delta_t = 1/100, n_el = 16,
+
+The results are shown in Fig.1, show wierd behavior for the explicit Euler because it gives a "negative pressure" that the pH solver maintains this trend which is opposite to the exact solution. THe 1st inital step also gives a spike in the vorticity plot and thus the Enstrophy.
+
+Will repeat experiment for refined mesh and higher degrees to confirm observation.
+
+--> d=2, deg=2, n_t=100, Delta_t = 1/100, n_el = 16, --> Explicit Euler does not converge even up to 1/1000 !!
+--> d=2, deg=1, n_t=100, Delta_t = 1/100, n_el = 32, --> Lower spikes observed but higher dual pressure initial error --> Fig_2
+--> d=3, deg=1, n_t=100, Delta_t = 1/100, n_el = 8, --> It is clear here that the explicit EUler gives a negative pressure, but the NS solver fixes it onwards and we see a flip in the pressure --> Fig_3
+
+-----------------------------------------------------------------
+2) 
+
+Now will compare Symmetric vs. non-symmetric LHS matrix:
+--> d=3, deg=1, n_t=5, Delta_t = 1/100, n_el = 8  --> Fig_4
+--> d=3, deg=1, n_t=5, Delta_t = 1/100, n_el = 8  --> Fig_5  
+
+--> d=2, deg=1, n_t=5, Delta_t = 1/100, n_el = 16  --> Fig_6
+--> d=2, deg=1, n_t=5, Delta_t = 1/100, n_el = 16  --> Fig_7
+
+--> d=2, deg=2, n_t=5, Delta_t = 1/100, n_el = 10  --> Fig_8
+--> d=2, deg=2, n_t=5, Delta_t = 1/100, n_el = 10  --> Fig_9
+
+--> d=3, deg=2, n_t=5, Delta_t = 1/100, n_el = 3  --> Fig_10
+--> d=3, deg=2, n_t=5, Delta_t = 1/100, n_el = 3  --> Fig_11
+
+Conclusion --> Only slightly affects divergence of vector field  visible in Fig4/5 and 6/7!!
+-----------------------------------------------------------------
+3)
+
+Fixed error in the Exact solution of Taylor Green on domain (0,0) --> (2,2)
+-----------------------------------------------------------------
+
+4) Try splitting pressure terms into two for successive solvers excluding initial one
+--> BEFORE --> d=2, deg=1, n_t=100, Delta_t = 1/100, n_el = 32, --> Fig_12 
+--> AFTER --> d=2, deg=1, n_t=100, Delta_t = 1/100, n_el = 32, --> Fig_13
+
+Conclusion --> It is better to not split it as oscillations start to appear 
+
+
